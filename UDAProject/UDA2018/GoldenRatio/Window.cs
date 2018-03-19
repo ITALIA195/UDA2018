@@ -85,7 +85,8 @@ namespace UDA2018.GoldenRatio
 
         private void OnUpdate(object sender, FrameEventArgs e)
         {
-            Title = $"{WindowTitle} - FPS: {1f / e.Time:0.} - DeltaTime: {_elapsedTime}";
+            if (Rectangles.Count > 0)
+                Title = $"{WindowTitle} - FPS: {1f / e.Time:0.}";
             if (Keyboard[Key.Escape])
                 Exit();
 
@@ -99,7 +100,7 @@ namespace UDA2018.GoldenRatio
             if (Rectangles.LastOrDefault() is GoldenRectangle rectangle)
                 Rectangles.Add(rectangle.Next);
             else
-                Rectangles.Add(new GoldenRectangle(Side.Right, null, Height - 20));
+                Rectangles.Add(new GoldenRectangle(Side.Right, null, Height));
         }
 
         private void OnResize(object sender, System.EventArgs e)

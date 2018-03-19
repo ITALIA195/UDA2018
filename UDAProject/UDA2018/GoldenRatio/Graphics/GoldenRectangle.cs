@@ -52,7 +52,7 @@ namespace UDA2018.GoldenRatio.Graphics
             }
         }
 
-        public bool IsLeftOrRight => ((int) _side & 1) == 1;
+        public bool IsLeftOrRight => ((int) _side & 1) == 0;
 
         /// <summary>
         /// The coordinate of the center of the <see cref="GoldenRectangle"/>, relative to the center of the window (0, 0)
@@ -154,7 +154,6 @@ namespace UDA2018.GoldenRatio.Graphics
         public PrimitiveType PrimitiveType => PrimitiveType.Lines;
         public Color Color => Color.Black;
         public bool Highlight { get; set; }
-        private float _highlight; // Alpha: 0 1 0 1 0
 
         public void Draw()
         {
@@ -189,30 +188,80 @@ namespace UDA2018.GoldenRatio.Graphics
             GL.End();
 
             if (!Highlight) return;
-            if (_highlight >= 1f)
-            {
-                Highlight = false;
+            if (SetAlpha())
                 return;
-            }
 
-            GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha);
 
             GL.Begin(PrimitiveType.Quads);
-            
-            GL.Color4(255, 0, 0, 255);
-            GL.Vertex2(Vertices[0]);
-            GL.Vertex2(Vertices[5]);
-            GL.Vertex2(Vertices[9]);
-            GL.Vertex2(Vertices[8]);
 
-            GL.Color4(0, 255, 0, 255);
-            GL.Vertex2(Vertices[0]);
-            GL.Vertex2(Vertices[6]);
-            GL.Vertex2(Vertices[1]);
-            GL.Vertex2(Vertices[9]);
+            if (IsLeftOrRight)
+            {
+                GL.Color4(Color.FromArgb((int) (_alpha * 255), 255, 184, 0));
+                GL.Vertex2(Vertices[0]);
+                GL.Vertex2(Vertices[5]);
+                GL.Vertex2(Vertices[9]);
+                GL.Vertex2(Vertices[8]);
 
-            _highlight += Window.DeltaTime * .2f / 5f;
+                GL.Color4(Color.FromArgb((int) (_alpha * 255), 0, 220, 255));
+                GL.Vertex2(Vertices[8]);
+                GL.Vertex2(Vertices[1]);
+                GL.Vertex2(Vertices[3]);
+                GL.Vertex2(Vertices[9]);
+            }
+            else
+            {
+                GL.Color4(Color.FromArgb((int)(_alpha * 255), 255, 184, 0));
+                GL.Vertex2(Vertices[0]);
+                GL.Vertex2(Vertices[2]);
+                GL.Vertex2(Vertices[9]);
+                GL.Vertex2(Vertices[8]);
+
+                GL.Color4(Color.FromArgb((int)(_alpha * 255), 0, 220, 255));
+                GL.Vertex2(Vertices[8]);
+                GL.Vertex2(Vertices[9]);
+                GL.Vertex2(Vertices[3]);
+                GL.Vertex2(Vertices[5]);
+            }
+
+            GL.End();
+        }
+
+        private int _step;
+        private float _alpha;
+        private bool SetAlpha()
+        {
+            float addby = Window.DeltaTime * 4f;
+            switch (_step)
+            {
+                case 0:
+                case 2:
+                    _alpha += addby;
+                    if (_alpha >= 1f)
+                    {
+                        _step++;
+                        _alpha = 1f;
+                    }
+                    break;
+                case 1:
+                case 3:
+                    _alpha -= addby;
+                    if (_alpha <= 0f)
+                    {
+                        _step++;
+                        _alpha = 0f;
+                    }
+                    break;
+            }
+            if (_step >= 4)
+            {
+                Highlight = false;
+                _step = 0;
+                _alpha = 0f;
+                return true;
+            }
+            GoldenMath.Clamp(ref _alpha, 0f, 1f);
+            return false;
         }
     }
 

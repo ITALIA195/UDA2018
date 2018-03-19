@@ -35,6 +35,7 @@ namespace UDA2018.GoldenRatio
         private void FollowNext()
         {
             if (Window.Rectangles.Count <= 0) return;
+            if (_current != null) _current.Highlight = false;
             _current = Window.Rectangles[Index++];
             _startPosition = Position;
             _startZoom = Zoom;
