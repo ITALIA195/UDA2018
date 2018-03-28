@@ -49,9 +49,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="UDA2018\GoldenRatio\Camera.cs" />
-    <Compile Include="UDA2018\GoldenRatio\Graphics\IDrawable.cs" />
+    <Compile Include="UDA2018\GoldenRatio\ColorAnimation.cs" />
+    <Compile Include="UDA2018\GoldenRatio\Graphics\Buffers.cs" />
+    <Compile Include="UDA2018\GoldenRatio\Graphics\CColor.cs" />
     <Compile Include="UDA2018\GoldenRatio\Graphics\GoldenRectangle.cs" />
+    <Compile Include="UDA2018\GoldenRatio\Graphics\IDrawable.cs" />
+    <None Include="UDA2018\GoldenRatio\Graphics\GoldenRectangle.cs.old" />
     <Compile Include="UDA2018\GoldenRatio\GoldenRectangle.cs" />
+    <Compile Include="UDA2018\GoldenRatio\Graphics\Shaders.cs" />
     <Compile Include="UDA2018\GoldenRatio\GUI.cs" />
     <Compile Include="UDA2018\GoldenRatio\GoldenMath.cs" />
     <Compile Include="UDA2018\GoldenRatio\Program.cs" />
@@ -78,6 +83,12 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <None Include="UDA2018\GoldenRatio\Shaders\fragment.shader">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="UDA2018\GoldenRatio\Shaders\vertex.shader">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

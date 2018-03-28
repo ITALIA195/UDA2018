@@ -1,20 +1,15 @@
-﻿using System.Drawing;
-using OpenTK;
-using OpenTK.Graphics.OpenGL;
+﻿using System;
 
 namespace UDA2018.GoldenRatio.Graphics
 {
-    public interface IDrawable
+    public class IDrawable
     {
-        Vector2 CenterPosition { get; }
-        float X { get; }
-        float Y { get; }
-        float Width { get; }
-        float Height { get; }
-        Vector2[] Vertices { get; }
-        PrimitiveType PrimitiveType { get; }
-        Color Color { get; }
+        public virtual void Draw()
+        {
+        }
 
-        void Draw();
+        public virtual void Update()
+        {
+        }
     }
 }

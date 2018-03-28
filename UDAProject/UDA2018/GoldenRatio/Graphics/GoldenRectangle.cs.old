@@ -1,0 +1,477 @@
+﻿using System;
+using System.Drawing;
+using System.Runtime.InteropServices;
+using OpenTK;
+using OpenTK.Graphics.OpenGL;
+
+namespace UDA2018.GoldenRatio.Graphics
+{
+    public class GoldenRectangle : IDrawable
+    {
+        private readonly Buffers _buffers;
+        private readonly Shaders _shaders;
+
+        private readonly int _positionAttribute;
+        private readonly int _colorAttribute;
+        private readonly int _uniformMatrix;
+
+        private readonly Side _side;
+        private readonly float _x;
+        private readonly float _y;
+        private readonly float _width;
+        private readonly float _height;
+
+        private readonly ushort[] _indexes;
+
+        private CColor _one = CColor.Red;
+        private CColor _two = CColor.Green;
+
+        public GoldenRectangle(Side side, float? width, float? height)
+        {
+            if (!width.HasValue && !height.HasValue)
+                throw new ArgumentNullException($"The arguments {nameof(width)} and {nameof(height)} cannot be null at the same time.");
+            _side = side;
+            if (width.HasValue)
+            {
+                _width = width.Value;
+                _height = ((int) side & 1) == 0 ? _width / GoldenMath.Ratio : _width * GoldenMath.Ratio;
+            }
+            else
+            {
+                _height = height.Value;
+                _width = ((int) side & 1) == 0 ? _height * GoldenMath.Ratio : _height / GoldenMath.Ratio;
+            }
+            _x = (Window.ScreenWidth - _width) / 2f;
+            _y = (Window.ScreenHeight - _height) / 2f;
+
+            //            Vector2[] vertices = new Vector2[6];
+            //            float dW = Window.ScreenWidth / 2f - _x;
+            //            float dH = Window.ScreenHeight / 2f - _y;
+            //            vertices[0] = new Vector2(-dW, -dH); // Top Left
+            //            vertices[1] = new Vector2(_width - dW, -dH); // Top Right
+            //            vertices[2] = new Vector2(-dW, _height - dH); // Bot Left
+            //            vertices[3] = new Vector2(_width - dW, _height - dH); // Bot Right
+            //            switch (_side)
+            //            {
+            //                case Side.Top:
+            //                    vertices[4] = new Vector2(-dW, _height - _height / GoldenMath.Ratio - dH); // Left
+            //                    vertices[5] = new Vector2(_width - dW, _height - _height / GoldenMath.Ratio - dH); // Right
+            //                    break;
+            //                case Side.Bottom:
+            //                    vertices[4] = new Vector2(-dW, _height / GoldenMath.Ratio - dH); // Left
+            //                    vertices[5] = new Vector2(_width - dW, _height / GoldenMath.Ratio - dH); // Right
+            //                    break;
+            //                case Side.Right:
+            //                    vertices[4] = new Vector2(_width / GoldenMath.Ratio - dW, -dH); // Top
+            //                    vertices[5] = new Vector2(_width / GoldenMath.Ratio - dW, _height - dH); // Bottom
+            //                    break;
+            //                case Side.Left:
+            //                    vertices[4] = new Vector2(_width - _width / GoldenMath.Ratio - dW, -dH); // Top
+            //                    vertices[5] = new Vector2(_width - _width / GoldenMath.Ratio - dW, _height - dH); // Bottom
+            //                    break;
+            //            }
+            Vector2[] vertices = {
+                new Vector2(-0.5f, 0.5f), // Top Left
+                new Vector2(0.5f, 0.5f),  // Top Right
+                new Vector2(-0.5f, -0.5f),  // Bottom Left
+                new Vector2(0.5f, -0.5f), // Bottom Right
+            };
+
+            CColor[] colors = new CColor[6];
+            colors[0] = _one;
+            colors[1] = _two;
+            colors[2] = _one;
+            colors[3] = _two;
+            switch (_side)
+            {
+                case Side.Right:
+                    colors[4] = CColor.Lerp(_one, _two, GoldenMath.OneOverRatio);
+                    colors[5] = colors[4];
+                    break;
+                case Side.Bottom:
+                    colors[4] = colors[0];
+                    colors[5] = colors[1];
+                    break;
+                case Side.Left:
+                    colors[4] = CColor.Lerp(_one, _two, GoldenMath.Ratio);
+                    colors[5] = colors[4];
+                    break;
+                case Side.Top:
+                    colors[4] = colors[0];
+                    colors[5] = colors[1];
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
+            _indexes = new ushort[] {
+                0, 1, // Top
+                1, 3, // Right
+                3, 2, // Bottom
+                2, 0, // Left
+//                4, 5, // Line
+            };
+
+
+            _shaders = new Shaders("vertex", "fragment");
+            GL.LinkProgram(_shaders.ProgramID);
+
+            _positionAttribute = GL.GetAttribLocation(_shaders.ProgramID, "position");
+            _colorAttribute = GL.GetAttribLocation(_shaders.ProgramID, "colorIn");
+            _uniformMatrix = GL.GetUniformLocation(_shaders.ProgramID, "modelView");
+            if (_positionAttribute < 0 || _colorAttribute < 0 || _uniformMatrix < 0)
+                throw new Exception("Invalid shader supplied! Program cannot continue.");
+
+            _buffers = new Buffers(Buffer.Index | Buffer.Vertex | Buffer.Color);
+            GL.BindBuffer(BufferTarget.ElementArrayBuffer, _buffers.IndexBuffer);
+            GL.BufferData(BufferTarget.ElementArrayBuffer, _indexes.Length * sizeof(uint), _indexes, BufferUsageHint.StaticDraw);
+
+            GL.BindBuffer(BufferTarget.ArrayBuffer, _buffers.ColorBuffer);
+            GL.BufferData(BufferTarget.ArrayBuffer, colors.Length * CColor.Size, colors, BufferUsageHint.StaticDraw);
+            GL.VertexAttribPointer(_colorAttribute, 3, VertexAttribPointerType.Float, true, CColor.Size, 0);
+
+            GL.BindBuffer(BufferTarget.ArrayBuffer, _buffers.VertexBuffer);
+            GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * Vector2.SizeInBytes, vertices, BufferUsageHint.StaticDraw);
+            GL.VertexAttribPointer(_positionAttribute, 2, VertexAttribPointerType.Float, false, Vector2.SizeInBytes, 0);
+        }
+
+        public GoldenRectangle(Side side, float x, float y, float? width, float? height)
+        {
+            if (!width.HasValue && !height.HasValue)
+                throw new ArgumentNullException($"The arguments {nameof(width)} and {nameof(height)} cannot be null at the same time.");
+            _side = side;
+            _x = x;
+            _y = y;
+            if (width.HasValue)
+            {
+                _width = width.Value;
+                _height = ((int)side & 1) == 0 ? _width / GoldenMath.Ratio : _width * GoldenMath.Ratio;
+            }
+            else
+            {
+                _height = height.Value;
+                _width = ((int)side & 1) == 0 ? _height * GoldenMath.Ratio : _height / GoldenMath.Ratio;
+            }
+
+            Vector2[] vertices = new Vector2[6];
+            float dW = Window.ScreenWidth / 2f - _x;
+            float dH = Window.ScreenHeight / 2f - _y;
+            vertices[0] = new Vector2(-dW, -dH); // Top Left
+            vertices[1] = new Vector2(_width - dW, -dH); // Top Right
+            vertices[2] = new Vector2(-dW, _height - dH); // Bot Left
+            vertices[3] = new Vector2(_width - dW, _height - dH); // Bot Right
+            switch (_side)
+            {
+                case Side.Top:
+                    vertices[4] = new Vector2(-dW, _height - _height / GoldenMath.Ratio - dH); // Left
+                    vertices[5] = new Vector2(_width - dW, _height - _height / GoldenMath.Ratio - dH); // Right
+                    break;
+                case Side.Bottom:
+                    vertices[4] = new Vector2(-dW, _height / GoldenMath.Ratio - dH); // Left
+                    vertices[5] = new Vector2(_width - dW, _height / GoldenMath.Ratio - dH); // Right
+                    break;
+                case Side.Right:
+                    vertices[4] = new Vector2(_width / GoldenMath.Ratio - dW, -dH); // Top
+                    vertices[5] = new Vector2(_width / GoldenMath.Ratio - dW, _height - dH); // Bottom
+                    break;
+                case Side.Left:
+                    vertices[4] = new Vector2(_width - _width / GoldenMath.Ratio - dW, -dH); // Top
+                    vertices[5] = new Vector2(_width - _width / GoldenMath.Ratio - dW, _height - dH); // Bottom
+                    break;
+            }
+
+            CColor[] colors = new CColor[6];
+            colors[0] = _one;
+            colors[1] = _two;
+            colors[2] = _two;
+            colors[3] = _one;
+            switch (_side)
+            {
+                case Side.Right:
+                    colors[4] = CColor.Lerp(_one, _two, GoldenMath.OneOverRatio);
+                    colors[5] = colors[4];
+                    break;
+                case Side.Bottom:
+                    colors[4] = colors[0];
+                    colors[5] = colors[1];
+                    break;
+                case Side.Left:
+                    colors[4] = CColor.Lerp(_one, _two, GoldenMath.Ratio);
+                    colors[5] = colors[4];
+                    break;
+                case Side.Top:
+                    colors[4] = colors[0];
+                    colors[5] = colors[1];
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
+            _indexes = new ushort[] {
+                4, 5, // Line
+            };
+
+            _shaders = new Shaders("vertex", "fragment");
+            GL.LinkProgram(_shaders.ProgramID);
+
+            _positionAttribute = GL.GetAttribLocation(_shaders.ProgramID, "position");
+            _colorAttribute = GL.GetAttribLocation(_shaders.ProgramID, "colorIn");
+            _uniformMatrix = GL.GetUniformLocation(_shaders.ProgramID, "modelView");
+            if (_positionAttribute < 0 || _colorAttribute < 0 || _uniformMatrix < 0)
+                throw new Exception("Invalid shader supplied! Program cannot continue.");
+
+            _buffers = new Buffers(Buffer.Index | Buffer.Vertex | Buffer.Color);
+            GL.BindBuffer(BufferTarget.ElementArrayBuffer, _buffers.IndexBuffer);
+            GL.BufferData(BufferTarget.ElementArrayBuffer, _indexes.Length * sizeof(uint), _indexes, BufferUsageHint.StaticDraw);
+
+            GL.BindBuffer(BufferTarget.ArrayBuffer, _buffers.ColorBuffer);
+            GL.BufferData(BufferTarget.ArrayBuffer, colors.Length * Marshal.SizeOf<CColor>(), colors, BufferUsageHint.StaticDraw);
+            GL.VertexAttribPointer(_colorAttribute, 3, VertexAttribPointerType.Float, true, Marshal.SizeOf<CColor>(), 0);
+
+            GL.BindBuffer(BufferTarget.ArrayBuffer, _buffers.VertexBuffer);
+            GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * Vector2.SizeInBytes, vertices, BufferUsageHint.StaticDraw);
+            GL.VertexAttribPointer(_positionAttribute, 2, VertexAttribPointerType.Float, false, Vector2.SizeInBytes, 0);
+        }
+
+        public bool IsLeftOrRight => ((int) _side & 1) == 0;
+
+        /// <summary>
+        /// The coordinate of the center of the <see cref="GoldenRectangle"/>, relative to the center of the window (0, 0)
+        /// </summary>
+        public Vector2 CenterPosition => new Vector2(-Window.ScreenWidth / 2f + (_x + _width / 2f), -Window.ScreenHeight / 2f + (_y + _height / 2f)); //TODO: Remove
+
+        /// <summary>
+        /// The coordinate of the center of the sub-<see cref="GoldenRectangle"/>, relative to the center of the window (0, 0)
+        /// </summary>
+        public Vector2 SubRectangle
+        {
+            get
+            {
+                Vector2 vector;
+                switch (_side)
+                {
+                    case Side.Right:
+                        vector = new Vector2(_x + _height + (_width - _height) / 2f, _y + _height / 2f);
+                        break;
+                    case Side.Bottom:
+                        vector = new Vector2(_x + _width / 2f, _y + _width + (_height - _width) / 2f);
+                        break;
+                    case Side.Left:
+                        vector = new Vector2(_x + (_width - _height) / 2f, _y + _height / 2f);
+                        break;
+                    case Side.Top:
+                        vector = new Vector2(_x + _width / 2f, _y + (_height - _width) / 2f);
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(_side));
+                }
+                vector += new Vector2(-Window.ScreenWidth / 2f, -Window.ScreenHeight / 2f);
+                return vector;
+            }
+        }
+
+        public float X => _x;
+        public float Y => _y;
+        public float Width => _width;
+        public float Height => _height;
+
+        public GoldenRectangle Next
+        {
+            get
+            {
+                switch (_side)
+                {
+                    case Side.Right:
+                        return new GoldenRectangle(Side.Bottom, _x + _height, Y, null, _height);
+                    case Side.Bottom:
+                        return new GoldenRectangle(Side.Left, _x, _y + _width, _width, null);
+                    case Side.Left:
+                        return new GoldenRectangle(Side.Top, _x, _y, null, _height);
+                    case Side.Top:
+                        return new GoldenRectangle(Side.Right, _x, _y, _width, null);
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(_side));
+                }
+            }
+        }
+
+        public PrimitiveType PrimitiveType => PrimitiveType.Lines;
+        public Color Color => Color.Black;
+        public bool Highlight { get; set; }
+
+        public void Draw()
+        {
+            GL.UseProgram(_shaders.ProgramID);
+
+            GL.EnableVertexAttribArray(_colorAttribute);
+            GL.EnableVertexAttribArray(_positionAttribute);
+
+            GL.BindBuffer(BufferTarget.ElementArrayBuffer, _buffers.IndexBuffer);
+            GL.DrawElements(PrimitiveType.Lines, _indexes.Length, DrawElementsType.UnsignedInt, 0);
+
+            GL.DisableVertexAttribArray(_positionAttribute);
+            GL.DisableVertexAttribArray(_colorAttribute);
+
+            //            GL.BindBuffer(BufferTarget.ArrayBuffer, _buffers.VertexBuffer);
+            //            GL.EnableClientState(ArrayCap.VertexArray);
+            //            GL.VertexPointer(2, VertexPointerType.Float, Vector2.SizeInBytes, IntPtr.Zero);
+            //
+            //            GL.BindBuffer(BufferTarget.ArrayBuffer, _buffers.ColorBuffer);
+            //            GL.EnableClientState(ArrayCap.ColorArray);
+            //            GL.ColorPointer(4, ColorPointerType.Float, 0, IntPtr.Zero);
+            //
+            //            GL.BindBuffer(BufferTarget.ArrayBuffer, _buffers.IndexBuffer);
+            //            GL.DrawElements(PrimitiveType, _indexes.Length, DrawElementsType.UnsignedShort, IntPtr.Zero);
+            //
+            //            GL.DisableClientState(ArrayCap.VertexArray);
+            //            GL.DisableClientState(ArrayCap.ColorArray);
+            {
+                /*GL.EnableClientState(ArrayCap.VertexArray);
+                GL.BindBuffer(BufferTarget.ElementArrayBuffer, _vbo.ID);
+                GL.VertexPointer(2, VertexPointerType.Float, Vector2.SizeInBytes, 0);
+    
+                GL.Color3(Color);
+                Vector2[] i = Vertices;
+                switch (_side)
+                {
+                    case Side.Right:
+                        GL.DrawArrays(PrimitiveType, 0, i.Length); //TODO: Check for first instance
+                        break;
+                    case Side.Bottom:
+                        GL.DrawArrays(PrimitiveType, i.Length - 3, 2); //TODO: Check for first instance
+                        break;
+                    case Side.Left:
+                        GL.DrawArrays(PrimitiveType, i.Length - 3, 2); //TODO: Check for first instance
+                        break;
+                    case Side.Top:
+                        GL.DrawArrays(PrimitiveType, i.Length - 3, 2); //TODO: Check for first instance
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+                GL.DisableClientState(ArrayCap.VertexArray);*/
+
+                //            GL.Color3(Color);
+                //            GL.Begin(PrimitiveType);
+                //
+                //            switch (_side)
+                //            {
+                //                case Side.Right:
+                //                    foreach (Vector2 vertex in Vertices)
+                //                        GL.Vertex2(vertex);
+                //                    break;
+                //                case Side.Bottom: // Draw only mid line
+                //                    GL.Vertex2(Vertices[8]);
+                //                    GL.Vertex2(Vertices[9]);
+                //                    break;
+                //                case Side.Left:
+                //                    GL.Vertex2(Vertices[8]);
+                //                    GL.Vertex2(Vertices[9]);
+                //                    break;
+                //                case Side.Top:
+                //                    GL.Vertex2(Vertices[8]);
+                //                    GL.Vertex2(Vertices[9]);
+                //                    break;
+                //                default:
+                //                    throw new ArgumentOutOfRangeException();
+                //            }
+                //
+                //            foreach (Vector2 vertex in Vertices)
+                //                GL.Vertex2(vertex);
+                //            GL.End();
+                //
+                //            Highlight = false;
+                //            if (!Highlight) return;
+                //            if (SetAlpha())
+                //                return;
+                //
+                //            GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha);
+                //
+                //            GL.Begin(PrimitiveType.Quads);
+                //
+                //            if (IsLeftOrRight)
+                //            {
+                //                GL.Color4(Color.FromArgb((int) (_alpha * 255), 255, 184, 0));
+                //                GL.Vertex2(Vertices[0]);
+                //                GL.Vertex2(Vertices[5]);
+                //                GL.Vertex2(Vertices[9]);
+                //                GL.Vertex2(Vertices[8]);
+                //
+                //                GL.Color4(Color.FromArgb((int) (_alpha * 255), 0, 220, 255));
+                //                GL.Vertex2(Vertices[8]);
+                //                GL.Vertex2(Vertices[1]);
+                //                GL.Vertex2(Vertices[3]);
+                //                GL.Vertex2(Vertices[9]);
+                //            }
+                //            else
+                //            {
+                //                GL.Color4(Color.FromArgb((int)(_alpha * 255), 255, 184, 0));
+                //                GL.Vertex2(Vertices[0]);
+                //                GL.Vertex2(Vertices[2]);
+                //                GL.Vertex2(Vertices[9]);
+                //                GL.Vertex2(Vertices[8]);
+                //
+                //                GL.Color4(Color.FromArgb((int)(_alpha * 255), 0, 220, 255));
+                //                GL.Vertex2(Vertices[8]);
+                //                GL.Vertex2(Vertices[9]);
+                //                GL.Vertex2(Vertices[3]);
+                //                GL.Vertex2(Vertices[5]);
+                //            }
+                //
+                //            GL.End();
+            }
+        }
+
+        public void Update()
+        {
+            _one += Window.DeltaTime * 2;
+            _two += Window.DeltaTime * 2;
+//            _buffers.PushColors(Colors, BufferUsageHint.StreamDraw);
+        }
+
+        private int _step;
+        private float _alpha;
+        private bool SetAlpha()
+        {
+            float addby = Window.DeltaTime * 4f;
+            switch (_step)
+            {
+                case 0:
+                case 2:
+                    _alpha += addby;
+                    if (_alpha >= 1f)
+                    {
+                        _step++;
+                        _alpha = 1f;
+                    }
+                    break;
+                case 1:
+                case 3:
+                    _alpha -= addby;
+                    if (_alpha <= 0f)
+                    {
+                        _step++;
+                        _alpha = 0f;
+                    }
+                    break;
+            }
+            if (_step >= 4)
+            {
+                Highlight = false;
+                _step = 0;
+                _alpha = 0f;
+                return true;
+            }
+            GoldenMath.Clamp(ref _alpha, 0f, 1f);
+            return false;
+        }
+    }
+
+    public enum Side
+    {
+        Right,
+        Bottom,
+        Left,
+        Top
+    }
+}
