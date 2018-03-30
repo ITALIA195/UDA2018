@@ -22,12 +22,12 @@ namespace UDA2018.GoldenRatio
         private const string WindowTitle = "UDA Project - Coded by Hawk";
         public static readonly List<IDrawable> Drawables = new List<IDrawable>();
         public static Stopwatch Stopwatch = new Stopwatch();
-        private const int RectanglesNumber = 16;
+        private const int RectanglesNumber = 10;
         private Camera Camera;
 
         public Window() : base(ScreenWidth, ScreenHeight, GraphicsMode.Default, WindowTitle, GameWindowFlags.Default)
         {
-//            GL.Enable(EnableCap.Blend);
+            GL.Enable(EnableCap.Blend);
             Stopwatch = Stopwatch.StartNew();
             Load += OnLoad;
             Resize += OnResize;
@@ -38,14 +38,10 @@ namespace UDA2018.GoldenRatio
         private void OnLoad(object sender, System.EventArgs e)
         {
             GL.ClearColor(Color.CornflowerBlue);
-            GL.LineWidth(2);
+            GL.LineWidth(3f);
             WindowBorder = WindowBorder.Fixed;
 
             Camera = new Camera(position: Vector2.Zero, rotation: 0f, zoom: 1f);
-
-//            Rectangles.Add(new GoldenRectangle(Side.Right, -100, 0, null, Height - 20));
-//            Rectangles.Add(new GoldenRectangle(Side.Bottom, null, Height - 20));
-//            Rectangles.Add(new GoldenRectangle(Side.Bottom, 100, 0, null, Height - 20));
 
             // Create rectangles
             while (Drawables.Count < RectanglesNumber)
@@ -57,7 +53,6 @@ namespace UDA2018.GoldenRatio
             }
         }
 
-        private GoldenRectangle test;
         private void OnDraw(object sender, FrameEventArgs e)
         {
             _currentFrame = Stopwatch.ElapsedMilliseconds;
@@ -68,6 +63,14 @@ namespace UDA2018.GoldenRatio
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
             Camera.CreateMatrix();
+
+//            GL.PointSize(3f);
+//            GL.Begin(PrimitiveType.Points);
+//
+//            GL.Color3(0, 1, 0);
+//            GL.Vertex2(0, 0);
+//
+//            GL.End();
 
             foreach (IDrawable rectangle in Drawables)
                 rectangle.Draw();

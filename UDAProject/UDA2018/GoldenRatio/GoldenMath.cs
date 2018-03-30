@@ -1,4 +1,5 @@
-﻿using OpenTK;
+﻿using System.Windows.Forms;
+using OpenTK;
 
 namespace UDA2018.GoldenRatio
 {
@@ -21,14 +22,13 @@ namespace UDA2018.GoldenRatio
 
         public static float Lerp(float a, float b, float t)
         {
-            t = t < 0f ? 0f : (t > 1f ? 1f : t);
+            Clamp(ref t, 0f, 1f);
             return a + t * (b - a);
         }
 
         public static Vector2 Lerp(Vector2 a, Vector2 b, float t)
         {
-            t = t < 0f ? 0f : (t > 1f ? 1f : t);
-            return new Vector2((a.X + (b.X - a.X) * t), (a.Y + (b.Y - a.Y) * t));
+            return new Vector2(a.X + (b.X - a.X) * t, a.Y + (b.Y - a.Y) * t);
         }
 
         public static float Min(float a, float b)

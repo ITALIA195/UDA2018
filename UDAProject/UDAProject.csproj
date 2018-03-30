@@ -54,14 +54,18 @@
     <Compile Include="UDA2018\GoldenRatio\Graphics\CColor.cs" />
     <Compile Include="UDA2018\GoldenRatio\Graphics\GoldenRectangle.cs" />
     <Compile Include="UDA2018\GoldenRatio\Graphics\IDrawable.cs" />
-    <None Include="UDA2018\GoldenRatio\Graphics\GoldenRectangle.cs.old" />
-    <Compile Include="UDA2018\GoldenRatio\GoldenRectangle.cs" />
     <Compile Include="UDA2018\GoldenRatio\Graphics\Shaders.cs" />
     <Compile Include="UDA2018\GoldenRatio\GUI.cs" />
     <Compile Include="UDA2018\GoldenRatio\GoldenMath.cs" />
     <Compile Include="UDA2018\GoldenRatio\Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UDA2018\GoldenRatio\Rect.cs" />
+    <None Include="UDA2018\GoldenRatio\Shaders\squareVertex.shader">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="UDA2018\GoldenRatio\Shaders\squareFragment.shader">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <Compile Include="UDA2018\GoldenRatio\Window.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>

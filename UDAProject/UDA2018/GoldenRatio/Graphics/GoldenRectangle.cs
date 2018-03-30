@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using OpenTK;
 using OpenTK.Graphics.OpenGL;
 
@@ -6,13 +9,21 @@ namespace UDA2018.GoldenRatio.Graphics
 {
     public class GoldenRectangle : IDrawable
     {
-        public static Matrix4 GlobalMatrix = Matrix4.Identity;
-
         private readonly Shaders _shaders;
         private readonly Buffers _buffers;
 
+        private readonly Shaders _squareShaders;
+        private readonly Buffers _squareBuffer1;
+        private readonly Buffers _squareBuffer2;
+
+        private readonly int _squarePositionAttribute;
+        private readonly int _squareColorAttribute;
+        private readonly int _squareAlphaUniform;
+        private readonly int _squareUniformMatrix;
+
         private readonly int _positionAttribute;
-        private readonly int _colorAttribute;
+        private readonly int _gradientStartUniform;
+        private readonly int _gradientEndUniform;
         private readonly int _uniformMatrix;
 
         private readonly Side _side;
@@ -24,8 +35,8 @@ namespace UDA2018.GoldenRatio.Graphics
         private Matrix4 _matrix;
         private readonly uint[] _indexes;
 
-        private readonly CColor _gradientStart = CColor.Red; // 1 0 0
-        private readonly CColor _gradientEnd = CColor.Blue; // 0 0 1 
+        public CColor _gradientStart = new CColor(2f);
+        public CColor _gradientEnd = new CColor(3f);
 
         //BUG: (Critical) Only the last instance of the class works properly 
         public GoldenRectangle(Side side, float x, float y, float? width, float? height)
@@ -45,6 +56,9 @@ namespace UDA2018.GoldenRatio.Graphics
                 _width = (width ?? height / GoldenMath.Ratio).Value;
                 _height = (height ?? width * GoldenMath.Ratio).Value;
             }
+
+            #region Vertices, Color and Index Buffer data
+
             Vector2[] vertices = new Vector2[6];
             float dW = _width / 2f;
             float dH = _height / 2f;
@@ -96,27 +110,103 @@ namespace UDA2018.GoldenRatio.Graphics
                 4, 5, // Line
             };
 
-            CreateMatrix(out _matrix);
+            #endregion
 
+            #region Create matrices
+
+            CreateZoomMatrix(out Matrix4 zoomMatrix);
+            CreateUniformMatrix(ref zoomMatrix, out _matrix);
+
+            #endregion
+
+            #region Golden Rectangle
+
+            #region Shaders
+            
             _shaders = new Shaders("vertex", "fragment"); //BUG: Shaders gets read from file every instance of GoldenRectangle
             GL.LinkProgram(_shaders.ProgramID);
 
             _positionAttribute = GL.GetAttribLocation(_shaders.ProgramID, "position");
-            _colorAttribute = GL.GetAttribLocation(_shaders.ProgramID, "colorIn");
+            _gradientStartUniform = GL.GetUniformLocation(_shaders.ProgramID, "gradientStart");
+            _gradientEndUniform = GL.GetUniformLocation(_shaders.ProgramID, "gradientEnd");
             _uniformMatrix = GL.GetUniformLocation(_shaders.ProgramID, "modelView");
-            if (_positionAttribute < 0 || _colorAttribute < 0 || _uniformMatrix < 0)
+            if (_positionAttribute < 0 || _gradientStartUniform < 0 || _gradientEndUniform < 0 || _uniformMatrix < 0)
                 throw new Exception("Invalid shader supplied! Program cannot continue.");
 
-            _buffers = new Buffers(Buffer.Index | Buffer.Vertex | Buffer.Color);
+            #endregion
+
+            #region Buffers
+
+            _buffers = new Buffers(Buffer.Index | Buffer.Vertex);
 
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, _buffers.IndexBuffer);
             GL.BufferData(BufferTarget.ElementArrayBuffer, _indexes.Length * sizeof(uint), _indexes, BufferUsageHint.StaticDraw);
 
-            GL.BindBuffer(BufferTarget.ArrayBuffer, _buffers.ColorBuffer);
-            GL.BufferData(BufferTarget.ArrayBuffer, colors.Length * CColor.Size, colors, BufferUsageHint.StaticDraw);
-
             GL.BindBuffer(BufferTarget.ArrayBuffer, _buffers.VertexBuffer);
             GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * Vector2.SizeInBytes, vertices, BufferUsageHint.StaticDraw);
+
+            #endregion
+
+            #endregion
+
+            #region Squares
+
+            #region Shader
+
+            _squareShaders = new Shaders("squareVertex", "squareFragment"); //BUG: Shaders gets read from file every instance of GoldenRectangle
+            GL.LinkProgram(_squareShaders.ProgramID);
+
+            _squarePositionAttribute = GL.GetAttribLocation(_squareShaders.ProgramID, "position");
+            _squareColorAttribute = GL.GetAttribLocation(_squareShaders.ProgramID, "colorIn");
+            _squareAlphaUniform = GL.GetUniformLocation(_squareShaders.ProgramID, "alpha");
+            _squareUniformMatrix = GL.GetUniformLocation(_squareShaders.ProgramID, "modelView");
+            if (_squarePositionAttribute < 0 || _squareColorAttribute < 0 || _squareUniformMatrix < 0)
+                throw new Exception("Invalid shader supplied! Program cannot continue.");
+
+            #endregion
+
+            #region Buffers
+
+            colors = new[]
+            {
+                CColor.Cyan, CColor.Empty, CColor.Cyan, CColor.Empty, CColor.Cyan, CColor.Cyan
+            };
+
+            uint[] indexes;
+            if (IsRightOrLeft)
+                indexes = new uint[] {0, 5, 4, 2};
+            else
+                indexes = new uint[] {0, 4, 5, 1};
+
+
+            _squareBuffer1 = new Buffers(Buffer.Index | Buffer.Color);
+            GL.BindBuffer(BufferTarget.ElementArrayBuffer, _squareBuffer1.IndexBuffer);
+            GL.BufferData(BufferTarget.ElementArrayBuffer, indexes.Length * sizeof(uint), indexes, BufferUsageHint.StaticDraw);
+
+            GL.BindBuffer(BufferTarget.ArrayBuffer, _squareBuffer1.ColorBuffer);
+            GL.BufferData(BufferTarget.ArrayBuffer, colors.Length * CColor.Size, colors, BufferUsageHint.StaticDraw);
+
+            colors = new[]
+            {
+                CColor.Empty, CColor.Teal, CColor.Empty, CColor.Teal, CColor.Teal, CColor.Teal
+            };
+
+            if (IsRightOrLeft)
+                indexes = new uint[] { 5, 1, 3, 4 };
+            else
+                indexes = new uint[] { 4, 2, 3, 5 };
+
+            _squareBuffer2 = new Buffers(Buffer.Index | Buffer.Color);
+            GL.BindBuffer(BufferTarget.ElementArrayBuffer, _squareBuffer2.IndexBuffer);
+            GL.BufferData(BufferTarget.ElementArrayBuffer, indexes.Length * sizeof(uint), indexes, BufferUsageHint.StaticDraw);
+
+            GL.BindBuffer(BufferTarget.ArrayBuffer, _squareBuffer2.ColorBuffer);
+            GL.BufferData(BufferTarget.ArrayBuffer, colors.Length * CColor.Size, colors, BufferUsageHint.StaticDraw);
+
+
+            #endregion
+
+            #endregion
         }
 
         public GoldenRectangle(Side side, float? width, float? height) : this(side, 0, 0, width, height)
@@ -125,13 +215,8 @@ namespace UDA2018.GoldenRatio.Graphics
         public override void Draw()
         {
             GL.UseProgram(_shaders.ProgramID);
-            GL.UniformMatrix4(_uniformMatrix, false, ref _matrix);
 
-            GL.EnableVertexAttribArray(_colorAttribute);
             GL.EnableVertexAttribArray(_positionAttribute);
-
-            GL.BindBuffer(BufferTarget.ArrayBuffer, _buffers.ColorBuffer);
-            GL.VertexAttribPointer(_colorAttribute, 3, VertexAttribPointerType.Float, true, CColor.Size, 0);
 
             GL.BindBuffer(BufferTarget.ArrayBuffer, _buffers.VertexBuffer);
             GL.VertexAttribPointer(_positionAttribute, 2, VertexAttribPointerType.Float, false, Vector2.SizeInBytes, 0);
@@ -140,25 +225,101 @@ namespace UDA2018.GoldenRatio.Graphics
             GL.DrawElements(PrimitiveType, _indexes.Length, DrawElementsType.UnsignedInt, 0);
 
             GL.DisableVertexAttribArray(_positionAttribute);
-            GL.DisableVertexAttribArray(_colorAttribute);
+
+            if (!_highlighted) return;
+            GL.UseProgram(_squareShaders.ProgramID);
+
+            GL.EnableVertexAttribArray(_squarePositionAttribute);
+            GL.EnableVertexAttribArray(_squareColorAttribute);
+
+            GL.BlendFunc(BlendingFactorSrc.SrcAlpha, BlendingFactorDest.OneMinusSrcAlpha);
+
+            GL.BindBuffer(BufferTarget.ArrayBuffer, _buffers.VertexBuffer);
+            GL.VertexAttribPointer(_squarePositionAttribute, 2, VertexAttribPointerType.Float, false, Vector2.SizeInBytes, 0);
+
+            GL.BindBuffer(BufferTarget.ArrayBuffer, _squareBuffer1.ColorBuffer);
+            GL.VertexAttribPointer(_squareColorAttribute, 3, VertexAttribPointerType.Float, true, CColor.Size, 0);
+
+            GL.BindBuffer(BufferTarget.ElementArrayBuffer, _squareBuffer1.IndexBuffer);
+            GL.DrawElements(PrimitiveType.Quads, 4, DrawElementsType.UnsignedInt, 0);
+
+            GL.BindBuffer(BufferTarget.ArrayBuffer, _buffers.VertexBuffer);
+            GL.VertexAttribPointer(_squarePositionAttribute, 2, VertexAttribPointerType.Float, false, Vector2.SizeInBytes, 0);
+
+            GL.BindBuffer(BufferTarget.ArrayBuffer, _squareBuffer2.ColorBuffer);
+            GL.VertexAttribPointer(_squareColorAttribute, 3, VertexAttribPointerType.Float, true, CColor.Size, 0);
+
+            GL.BindBuffer(BufferTarget.ElementArrayBuffer, _squareBuffer2.IndexBuffer);
+            GL.DrawElements(PrimitiveType.Quads, 4, DrawElementsType.UnsignedInt, 0);
+
+            GL.DisableVertexAttribArray(_squareColorAttribute);
+            GL.DisableVertexAttribArray(_squarePositionAttribute);
         }
 
+        private bool _highlighted;
+        private float _alpha = .3f;
         public override void Update()
         {
-            CreateMatrix(out _matrix);
+            CreateZoomMatrix(out Matrix4 zoomMatrix);
+            CreateUniformMatrix(ref zoomMatrix, out _matrix);
+
+            GL.UseProgram(_squareShaders.ProgramID);
+            GL.Uniform1(_squareAlphaUniform, _highlighted ? Alpha : 0);
+            GL.UniformMatrix4(_squareUniformMatrix, false, ref _matrix);
+
+            GL.UseProgram(_shaders.ProgramID);
+            GL.UniformMatrix4(_uniformMatrix, false, ref _matrix);
+
+            _gradientStart.Fade();
+            _gradientEnd.Fade();
+            GL.Uniform3(_gradientStartUniform, _gradientStart);
+            GL.Uniform3(_gradientEndUniform, _gradientEnd);
         }
 
-        private void CreateMatrix(out Matrix4 matrix)
+        private float Alpha
+        {
+            get
+            {
+                _alpha += Window.DeltaTime * 6f;
+                switch ((int)_alpha)
+                {
+
+                    case 0:
+                    case 2:
+                        return _alpha % 1;
+                    case 1:
+                    case 3:
+                        return 1f - _alpha % 1;
+                    default:
+                        _highlighted = false;
+                        _alpha = 0f;
+                        return 0f;
+                }
+            }
+        }
+
+        public static float Zoom { get; set; } = 1f;
+        public static float Rotation { get; set; } = 0f;
+        public static Vector2 Translate { get; set; } = new Vector2(0, 0);
+
+        private static void CreateZoomMatrix(out Matrix4 matrix) //TODO: Create animation
         {
             matrix = Matrix4.Identity;
-            GoldenMath.MatrixMult(ref matrix, Matrix4.CreateTranslation(0f, 0f, 0f));
-            GoldenMath.MatrixMult(ref matrix, Matrix4.CreateRotationZ(0f));
-            GoldenMath.MatrixMult(ref matrix, Matrix4.CreateScale(1f / Window.ScreenWidth * 2f, 1f / Window.ScreenHeight * 2f, 1f)); //TODO: Remove * 2f
+            GoldenMath.MatrixMult(ref matrix, Matrix4.CreateTranslation(-Translate.X/Window.ScreenWidth, Translate.Y/Window.ScreenHeight, 0f));
+            GoldenMath.MatrixMult(ref matrix, Matrix4.CreateRotationZ(Rotation)); //TODO: Maybe rotate too?
+            GoldenMath.MatrixMult(ref matrix, Matrix4.CreateScale(Zoom, Zoom, 1f));
+        }
 
-            Matrix4.Mult(ref matrix, ref GlobalMatrix, out matrix);
+        private static void CreateUniformMatrix(ref Matrix4 zoomMatrix, out Matrix4 matrix)
+        {
+            matrix = Matrix4.Identity;
+            GoldenMath.MatrixMult(ref matrix, Matrix4.CreateScale(1f / Window.ScreenWidth * 2f, 1f / Window.ScreenHeight * 2f, 1f)); //TODO: Remove * 2f
+            Matrix4.Mult(ref matrix, ref zoomMatrix, out matrix);
         }
 
         public bool IsRightOrLeft => ((int)_side & 1) == 0;
+
+
         public GoldenRectangle Next
         {
             get
@@ -178,7 +339,7 @@ namespace UDA2018.GoldenRatio.Graphics
                 }
             }
         }
-        public Vector2 SubRectangle
+        public Vector2 SubRectangle //TODO: Might be obsolete
         {
             get
             {

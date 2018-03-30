@@ -1,4 +1,6 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Data;
+using System.Runtime.InteropServices;
+using OpenTK;
 
 namespace UDA2018.GoldenRatio.Graphics
 {
@@ -12,79 +14,79 @@ namespace UDA2018.GoldenRatio.Graphics
 
         public CColor(float r, float g, float b)
         {
-            _stage = 0;
+            _hue = (r + g + b) * 6;
             _r = r;
             _g = g;
             _b = b;
+        }
+
+        public CColor(float hue)
+        {
+            _r = _g = _b = 0;
+            _hue = hue;
         }
 
         public static CColor Lerp(CColor c1, CColor c2, float q)
         {
             return new CColor(
                 GoldenMath.Lerp(c1._r, c2._r, q),
-                GoldenMath.Lerp(c1._g, c2._g, q), 
+                GoldenMath.Lerp(c1._g, c2._g, q),
                 GoldenMath.Lerp(c1._b, c2._b, q)
             );
         }
 
-        private float _stage;
-        private void Sum(float sum)
+        private void FromCColor(CColor color)
         {
-            switch (_stage)
+            _r = color._r;
+            _g = color._g;
+            _b = color._b;
+        }
+
+        private float _hue;
+        public void Fade()
+        {
+            _hue += Window.DeltaTime * 2;
+            float t = _hue % 1;
+            switch ((int)_hue)
             {
                 case 0:
-                    _r += sum; // +RED
-                    if (_r >= 1f)
-                        _stage++;
+                    FromCColor(Lerp(new CColor(0.54f, 0f, 1f), new CColor(1f, 0f, 0f), t));
                     break;
                 case 1:
-                    _b += sum; // +BLUE
-                    if (_b >= 1f)
-                        _stage++;
+                    FromCColor(Lerp(new CColor(1f, 0f, 0f), new CColor(1f, 0.45f, 0f), t));
                     break;
                 case 2:
-                    _r -= sum; // -RED
-                    if (_r <= 0f)
-                        _stage++;
+                    FromCColor(Lerp(new CColor(1f, 0.45f, 0f), new CColor(1f, 1f, 0f), t));
                     break;
                 case 3:
-                    _g += sum; // +GREEN
-                    if (_g >= 1f)
-                        _stage++;
+                    FromCColor(Lerp(new CColor(1f, 1f, 0f), new CColor(0f, 1f, 0f), t));
                     break;
                 case 4:
-                    _b -= sum; // -BLUE
-                    if (_b <= 0f)
-                        _stage++;
+                    FromCColor(Lerp(new CColor(0f, 1f, 0f), new CColor(0f, 1f, 1f), t));
                     break;
                 case 5:
-                    _r += sum; // +RED
-                    if (_r >= 1f)
-                        _stage++;
+                    FromCColor(Lerp(new CColor(0f, 1f, 1f), new CColor(0f, 0f, 1f), t));
                     break;
                 case 6:
-                    _g -= sum; // -GREEN
-                    if (_g <= 0f)
-                        _stage++;
+                    FromCColor(Lerp(new CColor(0f, 0f, 1f), new CColor(0.54f, 0f, 1f), t));
                     break;
-                case 7:
-                    _r += sum; // +RED
-                    if (_r >= 1f)
-                        _stage = 0;
+                default:
+                    _hue = 0;
                     break;
             }
-
-            GoldenMath.Clamp(ref _r, 0, 1);
-            GoldenMath.Clamp(ref _g, 0, 1);
-            GoldenMath.Clamp(ref _b, 0, 1);
         }
 
-        public static CColor operator +(CColor color, float sum)
+
+        public static implicit operator Vector3(CColor color)
         {
-            color.Sum(sum);
-            return color;
+            return new Vector3(color._r, color._g, color._b);
         }
 
+        public override string ToString() => $"{{{_r:0.00}, {_g:0.00}, {_b:0.00}, {_hue:0.00}}}";
+
+        public static CColor Empty => new CColor();
+        public static CColor Cyan => new CColor(0, 1, 1);
+        public static CColor Teal => new CColor(0, 0.5f, 0.5f);
         public static CColor Red => new CColor(1, 0, 0);
         public static CColor Green => new CColor(0, 1, 0);
         public static CColor Blue => new CColor(0, 0, 1);
