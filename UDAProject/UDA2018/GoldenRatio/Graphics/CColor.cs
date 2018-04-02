@@ -50,6 +50,33 @@ namespace UDA2018.GoldenRatio.Graphics
             switch ((int)_hue)
             {
                 case 0:
+                    FromCColor(Lerp(new CColor(1f, 0f, 1f), new CColor(1f, 0f, 0f), t));
+                    break;
+                case 1:
+                    FromCColor(Lerp(new CColor(1f, 0f, 0f), new CColor(1f, 1f, 0f), t));
+                    break;
+                case 2:
+                    FromCColor(Lerp(new CColor(1f, 1f, 0f), new CColor(0f, 1f, 0f), t));
+                    break;
+                case 3:
+                    FromCColor(Lerp(new CColor(0f, 1f, 0f), new CColor(0f, 1f, 1f), t));
+                    break;
+                case 4:
+                    FromCColor(Lerp(new CColor(0f, 1f, 1f), new CColor(0f, 0f, 1f), t));
+                    break;
+                case 5:
+                    FromCColor(Lerp(new CColor(0f, 0f, 1f), new CColor(1f, 0f, 1f), t));
+                    break;
+                default:
+                    _hue = 0;
+                    break;
+            }
+            /*
+            _hue += Window.DeltaTime * 2;
+            float t = _hue % 1;
+            switch ((int)_hue)
+            {
+                case 0:
                     FromCColor(Lerp(new CColor(0.54f, 0f, 1f), new CColor(1f, 0f, 0f), t));
                     break;
                 case 1:
@@ -73,7 +100,7 @@ namespace UDA2018.GoldenRatio.Graphics
                 default:
                     _hue = 0;
                     break;
-            }
+            }*/
         }
 
 
