@@ -3,16 +3,15 @@ using OpenTK.Graphics.OpenGL;
 
 namespace UDA2018.GoldenRatio.Graphics
 {
-    public struct Buffers
+    public class Buffers
     {
-        public int VertexBuffer { set;get; }
-        public int ColorBuffer { set;get; }
-        public int IndexBuffer { set;get; }
-        public int TextureBuffer { set;get; }
+        public int VertexBuffer { get; }
+        public int ColorBuffer { get; }
+        public int IndexBuffer { get; }
+        public int TextureBuffer { get; }
 
         public Buffers(Buffer buffers)
         {
-            VertexBuffer = ColorBuffer = IndexBuffer = TextureBuffer = -1;
             if ((buffers & Buffer.Color) != 0)
                 ColorBuffer = GL.GenBuffer();
             if ((buffers & Buffer.Vertex) != 0)
@@ -27,9 +26,9 @@ namespace UDA2018.GoldenRatio.Graphics
     [Flags]
     public enum Buffer
     {
-        Vertex = 0b0001,
-        Color = 0b0010,
-        Index = 0b0100,
-        Texture = 0b1000
+        Vertex = 1 << 0,
+        Color = 1 << 1,
+        Index = 1 << 2,
+        Texture = 1 << 3
     }
 }

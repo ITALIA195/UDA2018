@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Drawing;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -7,7 +8,7 @@ using OpenTK.Graphics.OpenGL;
 
 namespace UDA2018.GoldenRatio.Graphics
 {
-    public class GoldenRectangle : IDrawable
+    public class GoldenRectangle : IDrawable, ITrackable
     {
         private readonly Shaders _shaders;
         private readonly Buffers _buffers;
@@ -35,10 +36,12 @@ namespace UDA2018.GoldenRatio.Graphics
         private Matrix4 _matrix;
         private readonly uint[] _indexes;
 
+        private readonly CColor _squareColor = new CColor(0f, 1f, 1f);
+        private readonly CColor _rectangleColor = new CColor(1f, 0.3f, 0.3f);
+
         public CColor _gradientStart = new CColor(2f);
         public CColor _gradientEnd = new CColor(3f);
 
-        //BUG: (Critical) Only the last instance of the class works properly 
         public GoldenRectangle(Side side, float x, float y, float? width, float? height)
         {
             if (!width.HasValue && !height.HasValue)
@@ -166,18 +169,35 @@ namespace UDA2018.GoldenRatio.Graphics
             #endregion
 
             #region Buffers
-
-            colors = new[]
-            {
-                CColor.Cyan, CColor.Empty, CColor.Cyan, CColor.Empty, CColor.Cyan, CColor.Cyan
-            };
-
+            
             uint[] indexes;
-            if (IsRightOrLeft)
-                indexes = new uint[] {0, 5, 4, 2};
-            else
-                indexes = new uint[] {0, 4, 5, 1};
+            switch (_side)
+            {
+                case Side.Right:
+                    indexes = new uint[] { 0, 5, 4, 2 };
+                    break;
+                case Side.Bottom:
+                    indexes = new uint[] { 0, 4, 5, 1 };
+                    break;
+                case Side.Left:
+                    indexes = new uint[] { 5, 1, 3, 4 };
+                    break;
+                case Side.Top:
+                    indexes = new uint[] { 4, 2, 3, 5 };
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
 
+            colors = new[] // We could use new CColor[6].Select(xa => _squareColor).ToArray() for readability
+            {
+                _squareColor,
+                _squareColor,
+                _squareColor,
+                _squareColor,
+                _squareColor,
+                _squareColor
+            };
 
             _squareBuffer1 = new Buffers(Buffer.Index | Buffer.Color);
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, _squareBuffer1.IndexBuffer);
@@ -186,15 +206,33 @@ namespace UDA2018.GoldenRatio.Graphics
             GL.BindBuffer(BufferTarget.ArrayBuffer, _squareBuffer1.ColorBuffer);
             GL.BufferData(BufferTarget.ArrayBuffer, colors.Length * CColor.Size, colors, BufferUsageHint.StaticDraw);
 
+            switch (_side)
+            {
+                case Side.Right:
+                    indexes = new uint[] { 5, 1, 3, 4 };
+                    break;
+                case Side.Bottom:
+                    indexes = new uint[] { 4, 2, 3, 5 };
+                    break;
+                case Side.Left:
+                    indexes = new uint[] { 0, 5, 4, 2 };
+                    break;
+                case Side.Top:
+                    indexes = new uint[] { 0, 1, 5, 4 };
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+
             colors = new[]
             {
-                CColor.Empty, CColor.Teal, CColor.Empty, CColor.Teal, CColor.Teal, CColor.Teal
+                _rectangleColor,
+                _rectangleColor,
+                _rectangleColor,
+                _rectangleColor,
+                _rectangleColor,
+                _rectangleColor
             };
-
-            if (IsRightOrLeft)
-                indexes = new uint[] { 5, 1, 3, 4 };
-            else
-                indexes = new uint[] { 4, 2, 3, 5 };
 
             _squareBuffer2 = new Buffers(Buffer.Index | Buffer.Color);
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, _squareBuffer2.IndexBuffer);
@@ -222,7 +260,7 @@ namespace UDA2018.GoldenRatio.Graphics
             GL.VertexAttribPointer(_positionAttribute, 2, VertexAttribPointerType.Float, false, Vector2.SizeInBytes, 0);
 
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, _buffers.IndexBuffer);
-            GL.DrawElements(PrimitiveType, _indexes.Length, DrawElementsType.UnsignedInt, 0);
+            GL.DrawElements(PrimitiveType.Lines, _indexes.Length, DrawElementsType.UnsignedInt, 0);
 
             GL.DisableVertexAttribArray(_positionAttribute);
 
@@ -280,7 +318,7 @@ namespace UDA2018.GoldenRatio.Graphics
         {
             get
             {
-                _alpha += Window.DeltaTime * 6f;
+                _alpha += Window.DeltaTime * 4f;
                 switch ((int)_alpha)
                 {
 
@@ -298,16 +336,15 @@ namespace UDA2018.GoldenRatio.Graphics
             }
         }
 
-        public static float Zoom { get; set; } = 1f;
-        public static float Rotation { get; set; } = 0f;
-        public static Vector2 Translate { get; set; } = new Vector2(0, 0);
-
-        private static void CreateZoomMatrix(out Matrix4 matrix) //TODO: Create animation
+        private static float _zoom = 1f;
+        private static float _rotation = 0f;
+        private static Vector2 _translation;
+        private static void CreateZoomMatrix(out Matrix4 matrix)
         {
             matrix = Matrix4.Identity;
-            GoldenMath.MatrixMult(ref matrix, Matrix4.CreateTranslation(-Translate.X/Window.ScreenWidth, Translate.Y/Window.ScreenHeight, 0f));
-            GoldenMath.MatrixMult(ref matrix, Matrix4.CreateRotationZ(Rotation)); //TODO: Maybe rotate too?
-            GoldenMath.MatrixMult(ref matrix, Matrix4.CreateScale(Zoom, Zoom, 1f));
+            GoldenMath.MatrixMult(ref matrix, Matrix4.CreateTranslation(-_translation.X/Window.ScreenWidth, -_translation.Y/Window.ScreenHeight, 0f));
+            GoldenMath.MatrixMult(ref matrix, Matrix4.CreateRotationZ(_rotation));
+            GoldenMath.MatrixMult(ref matrix, Matrix4.CreateScale(_zoom, _zoom, 1f));
         }
 
         private static void CreateUniformMatrix(ref Matrix4 zoomMatrix, out Matrix4 matrix)
@@ -319,7 +356,6 @@ namespace UDA2018.GoldenRatio.Graphics
 
         public bool IsRightOrLeft => ((int)_side & 1) == 0;
 
-
         public GoldenRectangle Next
         {
             get
@@ -327,7 +363,7 @@ namespace UDA2018.GoldenRatio.Graphics
                 switch (_side)
                 {
                     case Side.Right:
-                        return new GoldenRectangle(Side.Bottom, x: _x + _width / 2f - (_width - _height) / 2f, y: _y, width: null, height: _height);
+                        return new GoldenRectangle(Side.Bottom, _x + _width / 2f - (_width - _height) / 2f, _y, null, _height);
                     case Side.Bottom:
                         return new GoldenRectangle(Side.Left, _x, _y - _height / 2f + (_height - _width) / 2f, _width, null);
                     case Side.Left:
@@ -339,38 +375,76 @@ namespace UDA2018.GoldenRatio.Graphics
                 }
             }
         }
-        public Vector2 SubRectangle //TODO: Might be obsolete
+
+        public TrackInfo TrackInfo
         {
             get
             {
-                Vector2 vector;
+                Vector2 offsetPosition;
                 switch (_side)
                 {
                     case Side.Right:
-                        vector = new Vector2(_x + _height + (_width - _height) / 2f, _y + _height / 2f);
+                        offsetPosition = new Vector2(_height, 0);
                         break;
                     case Side.Bottom:
-                        vector = new Vector2(_x + _width / 2f, _y + _width + (_height - _width) / 2f);
+                        offsetPosition = new Vector2(0, -_width);
                         break;
                     case Side.Left:
-                        vector = new Vector2(_x + (_width - _height) / 2f, _y + _height / 2f);
+                        offsetPosition = new Vector2(-_height, 0);
                         break;
                     case Side.Top:
-                        vector = new Vector2(_x + _width / 2f, _y + (_height - _width) / 2f);
+                        offsetPosition = new Vector2(0, _width);
                         break;
                     default:
                         throw new ArgumentOutOfRangeException(nameof(_side));
                 }
-                vector += new Vector2(-Window.ScreenWidth / 2f, -Window.ScreenHeight / 2f);
-                return vector;
+
+                return new TrackInfo
+                {
+                    OffsetPosition = offsetPosition,
+                    ZoomOffset = GoldenMath.Min(Window.ScreenWidth / SubRectangle.Width, Window.ScreenHeight / SubRectangle.Height) - (Window.ScreenHeight / (Window.ScreenHeight - 20f) - 1f)
+                };
             }
         }
 
-        public PrimitiveType PrimitiveType => PrimitiveType.Lines;
-        public float X => _x;
-        public float Y => _y;
-        public float Width => _width;
-        public float Height => _height;
+        public Rect SubRectangle
+        {
+            get
+            {
+                switch (_side)
+                {
+                    case Side.Right:
+                        return new Rect(_x + _height, _y, _width - _height, _height);
+                    case Side.Bottom:
+                        return new Rect(_x, _y + _width, _width, _height - _width);
+                    case Side.Left:
+                        return new Rect(_x, _y, _width - _height, _height);
+                    case Side.Top:
+                        return new Rect(_x, _y, _width, _height - _width);
+                    default:
+                        throw new ArgumentOutOfRangeException(nameof(_side));
+                }
+            }
+        }
+
+        public unsafe void TrackFinish(out bool* ptr)
+        {
+            _highlighted = true;
+            fixed (bool* boolptr = &_highlighted)
+                ptr = boolptr;
+        }
+
+        public Vector2 TrackPosition
+        {
+            get => _translation;
+            set => _translation = value;
+        }
+
+        public float TrackZoom
+        {
+            get => _zoom;
+            set => _zoom = value;
+        }
     }
 
     public enum Side

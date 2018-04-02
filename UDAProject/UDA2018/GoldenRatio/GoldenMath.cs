@@ -28,6 +28,7 @@ namespace UDA2018.GoldenRatio
 
         public static Vector2 Lerp(Vector2 a, Vector2 b, float t)
         {
+            Clamp(ref t, 0f, 1f);
             return new Vector2(a.X + (b.X - a.X) * t, a.Y + (b.Y - a.Y) * t);
         }
 

@@ -16,14 +16,12 @@ namespace UDA2018.GoldenRatio
         public static int ScreenHeight = 720;
         public static float DeltaTime => _elapsedTime;
         private static float _elapsedTime;
-        private long _currentFrame;
-        private long _lastFrame = -1;
 
         private const string WindowTitle = "UDA Project - Coded by Hawk";
-        public static readonly List<IDrawable> Drawables = new List<IDrawable>();
+        public static readonly List<GoldenRectangle> Rectangles = new List<GoldenRectangle>();
         public static Stopwatch Stopwatch = new Stopwatch();
+        private Tracker<GoldenRectangle> _tracker;
         private const int RectanglesNumber = 10;
-        private Camera Camera;
 
         public Window() : base(ScreenWidth, ScreenHeight, GraphicsMode.Default, WindowTitle, GameWindowFlags.Default)
         {
@@ -33,6 +31,7 @@ namespace UDA2018.GoldenRatio
             Resize += OnResize;
             RenderFrame += OnDraw;
             UpdateFrame += OnUpdate;
+            Keyboard.KeyDown += OnKeyDown;
         }
 
         private void OnLoad(object sender, System.EventArgs e)
@@ -41,54 +40,41 @@ namespace UDA2018.GoldenRatio
             GL.LineWidth(3f);
             WindowBorder = WindowBorder.Fixed;
 
-            Camera = new Camera(position: Vector2.Zero, rotation: 0f, zoom: 1f);
-
-            // Create rectangles
-            while (Drawables.Count < RectanglesNumber)
+            while (Rectangles.Count < RectanglesNumber)
             {
-                if (Drawables.LastOrDefault() is GoldenRectangle rectangle)
-                    Drawables.Add(rectangle.Next);
+                if (Rectangles.LastOrDefault() is GoldenRectangle rectangle)
+                    Rectangles.Add(rectangle.Next);
                 else
-                    Drawables.Add(new GoldenRectangle(Side.Right, null, Height - 20));
+                    Rectangles.Add(new GoldenRectangle(Side.Right, null, Height - 20));
             }
+
+            _tracker = new Tracker<GoldenRectangle>(Rectangles);
         }
 
         private void OnDraw(object sender, FrameEventArgs e)
         {
-            _currentFrame = Stopwatch.ElapsedMilliseconds;
-            if (_lastFrame < 0)
-                _lastFrame = _currentFrame;
-            _elapsedTime = (_currentFrame - _lastFrame) / 1000f;
+            _elapsedTime = (float) e.Time;
 
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-            Camera.CreateMatrix();
-
-//            GL.PointSize(3f);
-//            GL.Begin(PrimitiveType.Points);
-//
-//            GL.Color3(0, 1, 0);
-//            GL.Vertex2(0, 0);
-//
-//            GL.End();
-
-            foreach (IDrawable rectangle in Drawables)
+            foreach (GoldenRectangle rectangle in Rectangles)
                 rectangle.Draw();
 
             GL.Flush();
             SwapBuffers();
-
-            _lastFrame = _currentFrame;
         }
 
         private void OnUpdate(object sender, FrameEventArgs e)
         {
+            if (e.Time < 0.001) return;
             Title = $"{WindowTitle} - FPS: {1f / e.Time:0.}";
             if (Keyboard[Key.Escape])
                 Exit();
 
-            foreach (IDrawable rectangle in Drawables)
+            foreach (GoldenRectangle rectangle in Rectangles)
                 rectangle.Update();
+
+            _tracker.Update();
         }
 
         private void OnResize(object sender, System.EventArgs e)
@@ -97,6 +83,33 @@ namespace UDA2018.GoldenRatio
 
             ScreenWidth = Width;
             ScreenHeight = Height;
+        }
+
+        private float _lineWidth = 1;
+        private bool _pause;
+        private void OnKeyDown(object sender, KeyboardKeyEventArgs e)
+        {
+            switch (e.Key)
+            {
+                case Key.P:
+                    _pause = !_pause;
+                    if (_pause)
+                        UpdateFrame -= OnUpdate;
+                    else
+                        UpdateFrame += OnUpdate;
+                    break;
+                case Key.X:
+                    UpdateFrame -= OnUpdate;
+                    break;
+                case Key.R:
+                    _lineWidth -= 1f;
+                    GL.LineWidth(_lineWidth);
+                    break;
+                case Key.T:
+                    _lineWidth += 1f;
+                    GL.LineWidth(_lineWidth);
+                    break;
+            }
         }
     }
 }
