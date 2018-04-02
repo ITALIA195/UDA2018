@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
@@ -12,21 +13,15 @@ namespace UDA2018.GoldenRatio
 {
     public class Window : GameWindow
     {
-        public static int ScreenWidth = 1280;
-        public static int ScreenHeight = 720;
-        public static float DeltaTime => _elapsedTime;
-        private static float _elapsedTime;
-
         private const string WindowTitle = "UDA Project - Coded by Hawk";
-        public static readonly List<GoldenRectangle> Rectangles = new List<GoldenRectangle>();
-        public static Stopwatch Stopwatch = new Stopwatch();
-        private Tracker<GoldenRectangle> _tracker;
-        private const int RectanglesNumber = 10;
+        private static float _elapsedTime;
+        private Rectangles _rectangles;
+        private static int _width = 1280;
+        private static int _height = 720;
 
-        public Window() : base(ScreenWidth, ScreenHeight, GraphicsMode.Default, WindowTitle, GameWindowFlags.Default)
+        public Window() : base(_width, _height, GraphicsMode.Default, WindowTitle, GameWindowFlags.Default)
         {
             GL.Enable(EnableCap.Blend);
-            Stopwatch = Stopwatch.StartNew();
             Load += OnLoad;
             Resize += OnResize;
             RenderFrame += OnDraw;
@@ -40,15 +35,7 @@ namespace UDA2018.GoldenRatio
             GL.LineWidth(3f);
             WindowBorder = WindowBorder.Fixed;
 
-            while (Rectangles.Count < RectanglesNumber)
-            {
-                if (Rectangles.LastOrDefault() is GoldenRectangle rectangle)
-                    Rectangles.Add(rectangle.Next);
-                else
-                    Rectangles.Add(new GoldenRectangle(Side.Right, null, Height - 20));
-            }
-
-            _tracker = new Tracker<GoldenRectangle>(Rectangles);
+            _rectangles = new Rectangles();
         }
 
         private void OnDraw(object sender, FrameEventArgs e)
@@ -57,7 +44,7 @@ namespace UDA2018.GoldenRatio
 
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-            foreach (GoldenRectangle rectangle in Rectangles)
+            foreach (GoldenRectangle rectangle in _rectangles)
                 rectangle.Draw();
 
             GL.Flush();
@@ -66,23 +53,20 @@ namespace UDA2018.GoldenRatio
 
         private void OnUpdate(object sender, FrameEventArgs e)
         {
-            if (e.Time < 0.001) return;
+            if (e.Time < 0.001) return; //TODO: Check if works in less powerfull computers
             Title = $"{WindowTitle} - FPS: {1f / e.Time:0.}";
             if (Keyboard[Key.Escape])
                 Exit();
 
-            foreach (GoldenRectangle rectangle in Rectangles)
-                rectangle.Update();
-
-            _tracker.Update();
+            _rectangles.Update();
         }
 
-        private void OnResize(object sender, System.EventArgs e)
+        private void OnResize(object sender, EventArgs e)
         {
-            GL.Viewport(0, 0, Width, Height);
+            _width = base.Width;
+            _height = base.Height;
 
-            ScreenWidth = Width;
-            ScreenHeight = Height;
+            GL.Viewport(0, 0, _width, _height);
         }
 
         private float _lineWidth = 1;
@@ -111,5 +95,9 @@ namespace UDA2018.GoldenRatio
                     break;
             }
         }
+
+        public static float DeltaTime => _elapsedTime;
+        public new static int Width => _width;
+        public new static int Height => _height;
     }
 }

@@ -21,7 +21,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -51,13 +51,13 @@
   <ItemGroup>
     <Compile Include="UDA2018\GoldenRatio\Extension.cs" />
     <Compile Include="UDA2018\GoldenRatio\ITrackable.cs" />
+    <Compile Include="UDA2018\GoldenRatio\Rectangles.cs" />
     <Compile Include="UDA2018\GoldenRatio\Tracker.cs" />
     <Compile Include="UDA2018\GoldenRatio\Graphics\Buffers.cs" />
     <Compile Include="UDA2018\GoldenRatio\Graphics\CColor.cs" />
     <Compile Include="UDA2018\GoldenRatio\Graphics\GoldenRectangle.cs" />
     <Compile Include="UDA2018\GoldenRatio\Graphics\IDrawable.cs" />
     <Compile Include="UDA2018\GoldenRatio\Graphics\Shaders.cs" />
-    <Compile Include="UDA2018\GoldenRatio\GUI.cs" />
     <Compile Include="UDA2018\GoldenRatio\GoldenMath.cs" />
     <Compile Include="UDA2018\GoldenRatio\Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

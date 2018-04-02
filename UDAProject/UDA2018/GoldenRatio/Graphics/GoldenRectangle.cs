@@ -342,7 +342,7 @@ namespace UDA2018.GoldenRatio.Graphics
         private static void CreateZoomMatrix(out Matrix4 matrix)
         {
             matrix = Matrix4.Identity;
-            GoldenMath.MatrixMult(ref matrix, Matrix4.CreateTranslation(-_translation.X/Window.ScreenWidth, -_translation.Y/Window.ScreenHeight, 0f));
+            GoldenMath.MatrixMult(ref matrix, Matrix4.CreateTranslation(-_translation.X/Window.Width, -_translation.Y/Window.Height, 0f));
             GoldenMath.MatrixMult(ref matrix, Matrix4.CreateRotationZ(_rotation));
             GoldenMath.MatrixMult(ref matrix, Matrix4.CreateScale(_zoom, _zoom, 1f));
         }
@@ -350,7 +350,7 @@ namespace UDA2018.GoldenRatio.Graphics
         private static void CreateUniformMatrix(ref Matrix4 zoomMatrix, out Matrix4 matrix)
         {
             matrix = Matrix4.Identity;
-            GoldenMath.MatrixMult(ref matrix, Matrix4.CreateScale(1f / Window.ScreenWidth * 2f, 1f / Window.ScreenHeight * 2f, 1f)); //TODO: Remove * 2f
+            GoldenMath.MatrixMult(ref matrix, Matrix4.CreateScale(1f / Window.Width * 2f, 1f / Window.Height * 2f, 1f)); //TODO: Remove * 2f
             Matrix4.Mult(ref matrix, ref zoomMatrix, out matrix);
         }
 
@@ -375,6 +375,7 @@ namespace UDA2018.GoldenRatio.Graphics
                 }
             }
         }
+
 
         public TrackInfo TrackInfo
         {
@@ -402,7 +403,7 @@ namespace UDA2018.GoldenRatio.Graphics
                 return new TrackInfo
                 {
                     OffsetPosition = offsetPosition,
-                    ZoomOffset = GoldenMath.Min(Window.ScreenWidth / SubRectangle.Width, Window.ScreenHeight / SubRectangle.Height) - (Window.ScreenHeight / (Window.ScreenHeight - 20f) - 1f)
+                    ZoomOffset = GoldenMath.Min(Window.Width / SubRectangle.Width, Window.Height / SubRectangle.Height) - (Window.Height / (Window.Height - 20f) - 1f)
                 };
             }
         }
@@ -427,11 +428,10 @@ namespace UDA2018.GoldenRatio.Graphics
             }
         }
 
-        public unsafe void TrackFinish(out bool* ptr)
+        public CallbackTrackFinish TrackFinish()
         {
             _highlighted = true;
-            fixed (bool* boolptr = &_highlighted)
-                ptr = boolptr;
+            return () => _highlighted;
         }
 
         public Vector2 TrackPosition
