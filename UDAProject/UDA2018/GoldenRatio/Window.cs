@@ -90,7 +90,7 @@ namespace UDA2018.GoldenRatio
                     _lineWidth += 1f;
                     GL.LineWidth(_lineWidth);
                     break;
-                case Key.F11: // Glitches out in certain cases, then again, it's not supposed to exist
+                case Key.F11:
                     if (WindowState == WindowState.Fullscreen)
                     {
                         WindowState = WindowState.Normal;
