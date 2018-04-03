@@ -31,7 +31,7 @@ namespace UDA2018.GoldenRatio
 
         private void OnLoad(object sender, System.EventArgs e)
         {
-            GL.ClearColor(Color.CornflowerBlue);
+            GL.ClearColor(Color.White);
             GL.LineWidth(3f);
             WindowBorder = WindowBorder.Fixed;
 
@@ -92,6 +92,20 @@ namespace UDA2018.GoldenRatio
                 case Key.T:
                     _lineWidth += 1f;
                     GL.LineWidth(_lineWidth);
+                    break;
+                case Key.F11: // Glitches out in certain cases, then again, it's not supposed to exist
+                    if (WindowState == WindowState.Fullscreen)
+                    {
+                        WindowState = WindowState.Normal;
+                        base.Width = 1280;
+                        base.Height = 720;
+                    }
+                    else
+                    {
+                        WindowState = WindowState.Fullscreen;
+                        base.Width = 1920;
+                        base.Height = 1080;
+                    }
                     break;
             }
         }

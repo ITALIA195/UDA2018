@@ -1,19 +1,19 @@
 ﻿using System;
-using System.Drawing;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.CompilerServices;
 using OpenTK;
 using OpenTK.Graphics.OpenGL;
 
 namespace UDA2018.GoldenRatio.Graphics
 {
-    public class GoldenRectangle : IDrawable, ITrackable
+    public class GoldenRectangle : IDrawable, ITrackable, IDisposable
     {
-        private readonly Shaders _shaders;
-        private readonly Buffers _buffers;
+        public static Shaders Shader;
+        public static Shaders SquareShader;
 
-        private readonly Shaders _squareShaders;
+        public static int ProgramID;
+        private readonly int _squareProgramId;
+
+        private readonly Buffers _buffers;
         private readonly Buffers _squareBuffer1;
         private readonly Buffers _squareBuffer2;
 
@@ -35,12 +35,13 @@ namespace UDA2018.GoldenRatio.Graphics
 
         private Matrix4 _matrix;
         private readonly uint[] _indexes;
+        private readonly Vector2[] _vertices;
 
         private readonly CColor _squareColor = new CColor(0f, 1f, 1f);
         private readonly CColor _rectangleColor = new CColor(1f, 0.3f, 0.3f);
 
-        public CColor _gradientStart = new CColor(2f);
-        public CColor _gradientEnd = new CColor(3f);
+        public static CColor GradientStartColor = new CColor(2f);
+        public static CColor GradientEndColor = new CColor(3f);
 
         public GoldenRectangle(Side side, float x, float y, float? width, float? height)
         {
@@ -62,43 +63,31 @@ namespace UDA2018.GoldenRatio.Graphics
 
             #region Vertices, Color and Index Buffer data
 
-            Vector2[] vertices = new Vector2[6];
+            _vertices = new Vector2[6];
             float dW = _width / 2f;
             float dH = _height / 2f;
-            vertices[0] = new Vector2(-dW + _x, dH + _y); // Top Left
-            vertices[1] = new Vector2(dW + _x, dH + _y); // Top Right
-            vertices[2] = new Vector2(-dW + _x, -dH + _y); // Bottom Left
-            vertices[3] = new Vector2(dW + _x, -dH + _y); // Bottom Right
-
-            CColor[] colors = new CColor[6];
-            colors[0] = _gradientStart;
-            colors[1] = _gradientEnd;
-            colors[2] = _gradientStart;
-            colors[3] = _gradientEnd;
+            _vertices[0] = new Vector2(-dW + _x, dH + _y); // Top Left
+            _vertices[1] = new Vector2(dW + _x, dH + _y); // Top Right
+            _vertices[2] = new Vector2(-dW + _x, -dH + _y); // Bottom Left
+            _vertices[3] = new Vector2(dW + _x, -dH + _y); // Bottom Right
 
             switch (_side)
             {
                 case Side.Right:
-                    colors[4] = colors[5] = CColor.Lerp(_gradientStart, _gradientEnd, GoldenMath.OneOverRatio);
-                    vertices[4] = new Vector2(_width / GoldenMath.Ratio - dW + _x, -dH + _y);
-                    vertices[5] = new Vector2(_width / GoldenMath.Ratio - dW + _x, dH + _y);
+                    _vertices[4] = new Vector2(_width / GoldenMath.Ratio - dW + _x, -dH + _y);
+                    _vertices[5] = new Vector2(_width / GoldenMath.Ratio - dW + _x, dH + _y);
                     break;
                 case Side.Bottom:
-                    colors[4] = _gradientStart;
-                    colors[5] = _gradientEnd;
-                    vertices[4] = new Vector2(-dW + _x, dH - _height / GoldenMath.Ratio + _y);
-                    vertices[5] = new Vector2(dW + _x, dH - _height / GoldenMath.Ratio + _y);
+                    _vertices[4] = new Vector2(-dW + _x, dH - _height / GoldenMath.Ratio + _y);
+                    _vertices[5] = new Vector2(dW + _x, dH - _height / GoldenMath.Ratio + _y);
                     break;
                 case Side.Left:
-                    colors[4] = colors[5] = CColor.Lerp(_gradientStart, _gradientEnd, 1f - GoldenMath.OneOverRatio);
-                    vertices[4] = new Vector2(dW - _width / GoldenMath.Ratio + _x, -dH + _y);
-                    vertices[5] = new Vector2(dW - _width / GoldenMath.Ratio + _x, dH + _y);
+                    _vertices[4] = new Vector2(dW - _width / GoldenMath.Ratio + _x, -dH + _y);
+                    _vertices[5] = new Vector2(dW - _width / GoldenMath.Ratio + _x, dH + _y);
                     break;
                 case Side.Top:
-                    colors[4] = _gradientStart;
-                    colors[5] = _gradientEnd;
-                    vertices[4] = new Vector2(-dW + _x, _height / GoldenMath.Ratio - dH + _y);
-                    vertices[5] = new Vector2(dW + _x, _height / GoldenMath.Ratio - dH + _y);
+                    _vertices[4] = new Vector2(-dW + _x, _height / GoldenMath.Ratio - dH + _y);
+                    _vertices[5] = new Vector2(dW + _x, _height / GoldenMath.Ratio - dH + _y);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -125,14 +114,13 @@ namespace UDA2018.GoldenRatio.Graphics
             #region Golden Rectangle
 
             #region Shaders
-            
-            _shaders = new Shaders("vertex", "fragment"); //BUG: Shaders gets read from file every instance of GoldenRectangle
-            GL.LinkProgram(_shaders.ProgramID);
 
-            _positionAttribute = GL.GetAttribLocation(_shaders.ProgramID, "position");
-            _gradientStartUniform = GL.GetUniformLocation(_shaders.ProgramID, "gradientStart");
-            _gradientEndUniform = GL.GetUniformLocation(_shaders.ProgramID, "gradientEnd");
-            _uniformMatrix = GL.GetUniformLocation(_shaders.ProgramID, "modelView");
+            GL.LinkProgram(ProgramID);
+
+            _positionAttribute = GL.GetAttribLocation(ProgramID, "position");
+            _gradientStartUniform = GL.GetUniformLocation(ProgramID, "gradientStart");
+            _gradientEndUniform = GL.GetUniformLocation(ProgramID, "gradientEnd");
+            _uniformMatrix = GL.GetUniformLocation(ProgramID, "modelView");
             if (_positionAttribute < 0 || _gradientStartUniform < 0 || _gradientEndUniform < 0 || _uniformMatrix < 0)
                 throw new Exception("Invalid shader supplied! Program cannot continue.");
 
@@ -146,7 +134,7 @@ namespace UDA2018.GoldenRatio.Graphics
             GL.BufferData(BufferTarget.ElementArrayBuffer, _indexes.Length * sizeof(uint), _indexes, BufferUsageHint.StaticDraw);
 
             GL.BindBuffer(BufferTarget.ArrayBuffer, _buffers.VertexBuffer);
-            GL.BufferData(BufferTarget.ArrayBuffer, vertices.Length * Vector2.SizeInBytes, vertices, BufferUsageHint.StaticDraw);
+            GL.BufferData(BufferTarget.ArrayBuffer, _vertices.Length * Vector2.SizeInBytes, _vertices, BufferUsageHint.StaticDraw);
 
             #endregion
 
@@ -156,13 +144,14 @@ namespace UDA2018.GoldenRatio.Graphics
 
             #region Shader
 
-            _squareShaders = new Shaders("squareVertex", "squareFragment"); //BUG: Shaders gets read from file every instance of GoldenRectangle
-            GL.LinkProgram(_squareShaders.ProgramID);
+            _squareProgramId = GL.CreateProgram();
+            SquareShader.LinkProgram(_squareProgramId);
+            GL.LinkProgram(_squareProgramId);
 
-            _squarePositionAttribute = GL.GetAttribLocation(_squareShaders.ProgramID, "position");
-            _squareColorAttribute = GL.GetAttribLocation(_squareShaders.ProgramID, "colorIn");
-            _squareAlphaUniform = GL.GetUniformLocation(_squareShaders.ProgramID, "alpha");
-            _squareUniformMatrix = GL.GetUniformLocation(_squareShaders.ProgramID, "modelView");
+            _squarePositionAttribute = GL.GetAttribLocation(_squareProgramId, "position");
+            _squareColorAttribute = GL.GetAttribLocation(_squareProgramId, "colorIn");
+            _squareAlphaUniform = GL.GetUniformLocation(_squareProgramId, "alpha");
+            _squareUniformMatrix = GL.GetUniformLocation(_squareProgramId, "modelView");
             if (_squarePositionAttribute < 0 || _squareColorAttribute < 0 || _squareUniformMatrix < 0)
                 throw new Exception("Invalid shader supplied! Program cannot continue.");
 
@@ -189,8 +178,7 @@ namespace UDA2018.GoldenRatio.Graphics
                     throw new ArgumentOutOfRangeException();
             }
 
-            colors = new[] // We could use new CColor[6].Select(xa => _squareColor).ToArray() for readability
-            {
+            CColor[] colors = {
                 _squareColor,
                 _squareColor,
                 _squareColor,
@@ -252,7 +240,8 @@ namespace UDA2018.GoldenRatio.Graphics
 
         public override void Draw()
         {
-            GL.UseProgram(_shaders.ProgramID);
+            if (!IsVisible) return;
+            GL.UseProgram(ProgramID);
 
             GL.EnableVertexAttribArray(_positionAttribute);
 
@@ -265,7 +254,7 @@ namespace UDA2018.GoldenRatio.Graphics
             GL.DisableVertexAttribArray(_positionAttribute);
 
             if (!_highlighted) return;
-            GL.UseProgram(_squareShaders.ProgramID);
+            GL.UseProgram(_squareProgramId);
 
             GL.EnableVertexAttribArray(_squarePositionAttribute);
             GL.EnableVertexAttribArray(_squareColorAttribute);
@@ -295,23 +284,21 @@ namespace UDA2018.GoldenRatio.Graphics
         }
 
         private bool _highlighted;
-        private float _alpha = .3f;
+        private float _alpha;
         public override void Update()
         {
             CreateZoomMatrix(out Matrix4 zoomMatrix);
             CreateUniformMatrix(ref zoomMatrix, out _matrix);
 
-            GL.UseProgram(_squareShaders.ProgramID);
+            GL.UseProgram(_squareProgramId);
             GL.Uniform1(_squareAlphaUniform, _highlighted ? Alpha : 0);
             GL.UniformMatrix4(_squareUniformMatrix, false, ref _matrix);
 
-            GL.UseProgram(_shaders.ProgramID);
+            GL.UseProgram(ProgramID);
             GL.UniformMatrix4(_uniformMatrix, false, ref _matrix);
 
-            _gradientStart.Fade();
-            _gradientEnd.Fade();
-            GL.Uniform3(_gradientStartUniform, _gradientStart);
-            GL.Uniform3(_gradientEndUniform, _gradientEnd);
+            GL.Uniform3(_gradientStartUniform, GradientStartColor);
+            GL.Uniform3(_gradientEndUniform, GradientEndColor);
         }
 
         private float Alpha
@@ -352,6 +339,17 @@ namespace UDA2018.GoldenRatio.Graphics
             matrix = Matrix4.Identity;
             GoldenMath.MatrixMult(ref matrix, Matrix4.CreateScale(1f / Window.Width * 2f, 1f / Window.Height * 2f, 1f)); //TODO: Remove * 2f
             Matrix4.Mult(ref matrix, ref zoomMatrix, out matrix);
+        }
+
+        public bool IsVisible
+        {
+            get
+            {
+                float width = Window.Width / _zoom;
+                float height = Window.Height / _zoom;
+                Rect windowRect = new Rect(_translation.X / 2f + -width / 2f, _translation.Y / 2f + -height / 2f, width, height);
+                return _vertices.Any(vertex => GoldenMath.IsInside(vertex, windowRect));
+            }
         }
 
         public bool IsRightOrLeft => ((int)_side & 1) == 0;
@@ -444,6 +442,17 @@ namespace UDA2018.GoldenRatio.Graphics
         {
             get => _zoom;
             set => _zoom = value;
+        }
+
+        public void Dispose()
+        {
+            GL.DeleteBuffer(_buffers.VertexBuffer);
+            GL.DeleteBuffer(_buffers.IndexBuffer);
+            GL.DeleteBuffer(_squareBuffer1.IndexBuffer);
+            GL.DeleteBuffer(_squareBuffer1.ColorBuffer);
+            GL.DeleteBuffer(_squareBuffer2.IndexBuffer);
+            GL.DeleteBuffer(_squareBuffer2.ColorBuffer);
+            GL.DeleteProgram(_squareProgramId);
         }
     }
 

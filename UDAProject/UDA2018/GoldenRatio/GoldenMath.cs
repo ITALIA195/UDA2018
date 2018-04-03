@@ -1,5 +1,4 @@
-﻿using System.Windows.Forms;
-using OpenTK;
+﻿using OpenTK;
 
 namespace UDA2018.GoldenRatio
 {
@@ -49,13 +48,11 @@ namespace UDA2018.GoldenRatio
 
         public static bool IsInside(Vector2 point, Rect rect)
         {
-            if (point.X < rect.X)
+            // X axis
+            if (point.X < rect.X || point.X > rect.X + rect.Width)
                 return false;
-            if (point.X > rect.X + rect.Width)
-                return false;
-            if (point.Y < rect.Y)
-                return false;
-            if (point.Y > rect.Y + rect.Height)
+            // Y axis
+            if (point.Y < rect.Y || point.Y > rect.Y + rect.Height)
                 return false;
             return true;
         }

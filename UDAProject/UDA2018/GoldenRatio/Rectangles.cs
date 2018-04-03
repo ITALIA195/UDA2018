@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using OpenTK.Graphics.OpenGL;
 using UDA2018.GoldenRatio.Graphics;
 
 namespace UDA2018.GoldenRatio
@@ -11,12 +12,16 @@ namespace UDA2018.GoldenRatio
 
         public Rectangles()
         {
+            GoldenRectangle.ProgramID = GL.CreateProgram();
+            GoldenRectangle.Shader = new Shaders("vertex", "fragment");
+            GoldenRectangle.Shader.LinkProgram(GoldenRectangle.ProgramID);
+            GoldenRectangle.SquareShader = new Shaders("squareVertex", "squareFragment");
             while (Count < RectanglesNumber)
             {
                 if (this.LastOrDefault() is GoldenRectangle rectangle)
-                    Add(rectangle.Next);
+                    base.Add(rectangle.Next);
                 else
-                    Add(new GoldenRectangle(Side.Right, null, Window.Height - 20));
+                    base.Add(new GoldenRectangle(Side.Right, null, Window.Height - 20));
             }
 
             _tracker = new Tracker<GoldenRectangle>(this);
@@ -28,6 +33,20 @@ namespace UDA2018.GoldenRatio
                 rectangle.Update();
 
             _tracker.Update();
+
+            GoldenRectangle.GradientStartColor.Fade();
+            GoldenRectangle.GradientEndColor.Fade();
+
+            RemoveAll(x => !x.IsVisible);
+            if (Count < RectanglesNumber)
+                Add(this.LastOrDefault()?.Next);
+        }
+
+        public new void Add(GoldenRectangle rectangle)
+        {
+            if (rectangle == null) return;
+            base.Add(rectangle);
+            _tracker.Enqueue(rectangle);
         }
     }
 }

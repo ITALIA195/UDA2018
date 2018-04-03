@@ -1,27 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using OpenTK;
 
 namespace UDA2018.GoldenRatio
 {
-    public class Tracker<T> where T: ITrackable
+    public class Tracker<T> : Queue<T> where T: ITrackable
     {
-        private readonly Queue<T> _objects;
         private T _tracked;
 
         private CallbackTrackFinish _callback;
         private Vector2 _startPosition, _endPosition;
         private float _startZoom, _endZoom;
 
-        public Tracker(IEnumerable<T> objects)
-        {
-            _objects = new Queue<T>(objects);
-        }
+        public Tracker(IEnumerable<T> objects) : base(objects)
+        {}
 
         private void TrackNext()
         {
-            if (_objects.Count <= 0) return;
-            _tracked = _objects.Dequeue();
+            if (Count <= 0) return;
+            _tracked = Dequeue();
             _startPosition = _tracked.TrackPosition;
             _endPosition = _startPosition + _tracked.TrackInfo.OffsetPosition;
             _startZoom = _tracked.TrackZoom;
