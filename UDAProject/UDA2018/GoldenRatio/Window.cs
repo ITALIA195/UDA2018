@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
-using System.Linq;
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
@@ -16,10 +13,10 @@ namespace UDA2018.GoldenRatio
         private const string WindowTitle = "UDA Project - Coded by Hawk";
         private static float _elapsedTime;
         private Rectangles _rectangles;
-        private static int _width = 1280;
-        private static int _height = 720;
+        private static int _width;
+        private static int _height;
 
-        public Window() : base(_width, _height, GraphicsMode.Default, WindowTitle, GameWindowFlags.Default)
+        public Window() : base(1280, 720, GraphicsMode.Default, WindowTitle, GameWindowFlags.Default)
         {
             GL.Enable(EnableCap.Blend);
             Load += OnLoad;
@@ -111,7 +108,9 @@ namespace UDA2018.GoldenRatio
         }
 
         public static float DeltaTime => _elapsedTime;
-        public new static int Width => _width;
-        public new static int Height => _height;
+        public static float ScreenRatio => (float)_width / _height;
+        public static float OneOverScreenRatio => (float)_height / _width;
+        public new static float Width => _width;
+        public new static float Height => _height;
     }
 }

@@ -329,7 +329,7 @@ namespace UDA2018.GoldenRatio.Graphics
         private static void CreateZoomMatrix(out Matrix4 matrix)
         {
             matrix = Matrix4.Identity;
-            GoldenMath.MatrixMult(ref matrix, Matrix4.CreateTranslation(-_translation.X/Window.Width, -_translation.Y/Window.Height, 0f));
+            GoldenMath.MatrixMult(ref matrix, Matrix4.CreateTranslation(-_translation.X, -_translation.Y, 0f));
             GoldenMath.MatrixMult(ref matrix, Matrix4.CreateRotationZ(_rotation));
             GoldenMath.MatrixMult(ref matrix, Matrix4.CreateScale(_zoom, _zoom, 1f));
         }
@@ -337,7 +337,7 @@ namespace UDA2018.GoldenRatio.Graphics
         private static void CreateUniformMatrix(ref Matrix4 zoomMatrix, out Matrix4 matrix)
         {
             matrix = Matrix4.Identity;
-            GoldenMath.MatrixMult(ref matrix, Matrix4.CreateScale(1f / Window.Width * 2f, 1f / Window.Height * 2f, 1f)); //TODO: Remove * 2f
+            GoldenMath.MatrixMult(ref matrix, Matrix4.CreateScale(Window.Height / Window.Width, 1f, 1f));
             Matrix4.Mult(ref matrix, ref zoomMatrix, out matrix);
         }
 
@@ -345,6 +345,7 @@ namespace UDA2018.GoldenRatio.Graphics
         {
             get
             {
+                return true; //TODO: Fix
                 float width = Window.Width / _zoom;
                 float height = Window.Height / _zoom;
                 Rect windowRect = new Rect(_translation.X / 2f + -width / 2f, _translation.Y / 2f + -height / 2f, width, height);
@@ -383,16 +384,16 @@ namespace UDA2018.GoldenRatio.Graphics
                 switch (_side)
                 {
                     case Side.Right:
-                        offsetPosition = new Vector2(_height, 0);
+                        offsetPosition = new Vector2((_width - _width / 2f - (_width - _height) / 2f) * Window.OneOverScreenRatio, 0);
                         break;
                     case Side.Bottom:
-                        offsetPosition = new Vector2(0, -_width);
+                        offsetPosition = new Vector2(0, -(_height - _height / 2f - (_height - _width) / 2f));
                         break;
                     case Side.Left:
-                        offsetPosition = new Vector2(-_height, 0);
+                        offsetPosition = new Vector2(-(_width - _width / 2f - (_width - _height) / 2f) * Window.OneOverScreenRatio, 0);
                         break;
                     case Side.Top:
-                        offsetPosition = new Vector2(0, _width);
+                        offsetPosition = new Vector2(0, _height - _height / 2f - (_height - _width) / 2f);
                         break;
                     default:
                         throw new ArgumentOutOfRangeException(nameof(_side));
@@ -401,7 +402,7 @@ namespace UDA2018.GoldenRatio.Graphics
                 return new TrackInfo
                 {
                     OffsetPosition = offsetPosition,
-                    ZoomOffset = GoldenMath.Min(Window.Width / SubRectangle.Width, Window.Height / SubRectangle.Height) - (Window.Height / (Window.Height - 20f) - 1f)
+                    ZoomOffset = GoldenMath.Min(Window.ScreenRatio * 2 / SubRectangle.Width, 1.9f / SubRectangle.Height)
                 };
             }
         }

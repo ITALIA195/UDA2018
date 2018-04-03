@@ -21,7 +21,7 @@ namespace UDA2018.GoldenRatio
                 if (this.LastOrDefault() is GoldenRectangle rectangle)
                     base.Add(rectangle.Next);
                 else
-                    base.Add(new GoldenRectangle(Side.Right, null, Window.Height - 20));
+                    base.Add(new GoldenRectangle(Side.Right, null, 1.9f));
             }
 
             _tracker = new Tracker<GoldenRectangle>(this);
