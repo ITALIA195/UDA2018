@@ -7,8 +7,8 @@ namespace UDA2018.GoldenRatio
 {
     public class Rectangles : List<GoldenRectangle>
     {
-        private readonly Tracker<GoldenRectangle> _tracker;
-        private const int RectanglesNumber = 16;
+        private static Tracker<GoldenRectangle> _tracker;
+        private const int RectanglesNumber = 12;
 
         public Rectangles()
         {
@@ -19,9 +19,9 @@ namespace UDA2018.GoldenRatio
             while (Count < RectanglesNumber)
             {
                 if (this.LastOrDefault() is GoldenRectangle rectangle)
-                    base.Add(rectangle.Next);
+                    Add(rectangle.Next);
                 else
-                    base.Add(new GoldenRectangle(Side.Right, null, 1.9f));
+                    Add(new GoldenRectangle(Side.Right, null, 1.9f));
             }
 
             _tracker = new Tracker<GoldenRectangle>(this);
@@ -36,17 +36,8 @@ namespace UDA2018.GoldenRatio
 
             GoldenRectangle.GradientStartColor.Fade();
             GoldenRectangle.GradientEndColor.Fade();
-
-            RemoveAll(x => !x.IsVisible);
-            if (Count < RectanglesNumber)
-                Add(this.LastOrDefault()?.Next);
         }
 
-        public new void Add(GoldenRectangle rectangle)
-        {
-            if (rectangle == null) return;
-            base.Add(rectangle);
-            _tracker.Enqueue(rectangle);
-        }
+        public static Tracker<GoldenRectangle> Tracker => _tracker;
     }
 }

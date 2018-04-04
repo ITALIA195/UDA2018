@@ -51,6 +51,7 @@
   <ItemGroup>
     <Compile Include="UDA2018\GoldenRatio\Extension.cs" />
     <Compile Include="UDA2018\GoldenRatio\ITrackable.cs" />
+    <Compile Include="UDA2018\GoldenRatio\LoopingList.cs" />
     <Compile Include="UDA2018\GoldenRatio\Rectangles.cs" />
     <Compile Include="UDA2018\GoldenRatio\Tracker.cs" />
     <Compile Include="UDA2018\GoldenRatio\Graphics\Buffers.cs" />

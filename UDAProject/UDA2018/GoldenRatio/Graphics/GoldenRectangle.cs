@@ -36,6 +36,7 @@ namespace UDA2018.GoldenRatio.Graphics
         private Matrix4 _matrix;
         private readonly uint[] _indexes;
         private readonly Vector2[] _vertices;
+        private readonly bool _first;
 
         private readonly CColor _squareColor = new CColor(0f, 1f, 1f);
         private readonly CColor _rectangleColor = new CColor(1f, 0.3f, 0.3f);
@@ -236,11 +237,15 @@ namespace UDA2018.GoldenRatio.Graphics
         }
 
         public GoldenRectangle(Side side, float? width, float? height) : this(side, 0, 0, width, height)
-        {}
+        {
+            _first = true;
+        }
 
         public override void Draw()
         {
-            if (!IsVisible) return;
+            if (_highlighted)
+                DrawQuads();
+
             GL.UseProgram(ProgramID);
 
             GL.EnableVertexAttribArray(_positionAttribute);
@@ -252,8 +257,10 @@ namespace UDA2018.GoldenRatio.Graphics
             GL.DrawElements(PrimitiveType.Lines, _indexes.Length, DrawElementsType.UnsignedInt, 0);
 
             GL.DisableVertexAttribArray(_positionAttribute);
+        }
 
-            if (!_highlighted) return;
+        private void DrawQuads()
+        {
             GL.UseProgram(_squareProgramId);
 
             GL.EnableVertexAttribArray(_squarePositionAttribute);
@@ -324,7 +331,7 @@ namespace UDA2018.GoldenRatio.Graphics
         }
 
         private static float _zoom = 1f;
-        private static float _rotation = 0f;
+        private static float _rotation;
         private static Vector2 _translation;
         private static void CreateZoomMatrix(out Matrix4 matrix)
         {
@@ -339,18 +346,6 @@ namespace UDA2018.GoldenRatio.Graphics
             matrix = Matrix4.Identity;
             GoldenMath.MatrixMult(ref matrix, Matrix4.CreateScale(Window.Height / Window.Width, 1f, 1f));
             Matrix4.Mult(ref matrix, ref zoomMatrix, out matrix);
-        }
-
-        public bool IsVisible
-        {
-            get
-            {
-                return true; //TODO: Fix
-                float width = Window.Width / _zoom;
-                float height = Window.Height / _zoom;
-                Rect windowRect = new Rect(_translation.X / 2f + -width / 2f, _translation.Y / 2f + -height / 2f, width, height);
-                return _vertices.Any(vertex => GoldenMath.IsInside(vertex, windowRect));
-            }
         }
 
         public bool IsRightOrLeft => ((int)_side & 1) == 0;
@@ -430,16 +425,23 @@ namespace UDA2018.GoldenRatio.Graphics
         public CallbackTrackFinish TrackFinish()
         {
             _highlighted = true;
-            return () => _highlighted;
+            return Callback; // We could use lambda instead
         }
 
-        public Vector2 TrackPosition
+        private bool Callback()
+        {
+            if (!_highlighted && !_first && _side == Side.Right)
+                Rectangles.Tracker.Reset();
+            return _highlighted;
+        }
+
+        public static Vector2 TrackPosition
         {
             get => _translation;
             set => _translation = value;
         }
 
-        public float TrackZoom
+        public static float TrackZoom
         {
             get => _zoom;
             set => _zoom = value;

@@ -28,7 +28,7 @@ namespace UDA2018.GoldenRatio
 
         private void OnLoad(object sender, System.EventArgs e)
         {
-            GL.ClearColor(Color.White);
+            GL.ClearColor(Color.CornflowerBlue);
             GL.LineWidth(3f);
             WindowBorder = WindowBorder.Fixed;
 
@@ -50,7 +50,7 @@ namespace UDA2018.GoldenRatio
 
         private void OnUpdate(object sender, FrameEventArgs e)
         {
-            if (e.Time < 0.001) return; //TODO: Check if works in less powerfull computers
+            if (e.Time < 0.0005) return; //TODO: Check if works in less powerfull computers
             Title = $"{WindowTitle} - FPS: {1f / e.Time:0.}";
             if (Keyboard[Key.Escape])
                 Exit();
@@ -78,9 +78,6 @@ namespace UDA2018.GoldenRatio
                         UpdateFrame -= OnUpdate;
                     else
                         UpdateFrame += OnUpdate;
-                    break;
-                case Key.X:
-                    UpdateFrame -= OnUpdate;
                     break;
                 case Key.R:
                     _lineWidth -= 1f;
