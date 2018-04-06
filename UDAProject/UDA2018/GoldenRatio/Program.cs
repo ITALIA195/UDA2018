@@ -1,11 +1,14 @@
-﻿namespace UDA2018.GoldenRatio
+﻿using OpenTK.Graphics.OpenGL;
+
+namespace UDA2018.GoldenRatio
 {
-    public static class Program
+    public struct Program
     {
-        public static void Main()
+        public int ID { get; set; }
+
+        public Program(int id)
         {
-            using (Window window = new Window())
-                window.Run(60.0);
+            ID = id;
         }
     }
 }

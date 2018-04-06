@@ -45,16 +45,5 @@ namespace UDA2018.GoldenRatio
         {
             Matrix4.Mult(ref m4, ref mult, out m4);
         }
-
-        public static bool IsInside(Vector2 point, Rect rect)
-        {
-            // X axis
-            if (point.X < rect.X || point.X > rect.X + rect.Width)
-                return false;
-            // Y axis
-            if (point.Y < rect.Y || point.Y > rect.Y + rect.Height)
-                return false;
-            return true;
-        }
     }
 }

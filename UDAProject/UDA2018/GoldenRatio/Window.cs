@@ -13,12 +13,14 @@ namespace UDA2018.GoldenRatio
         private const string WindowTitle = "UDA Project - Coded by Hawk";
         private static float _elapsedTime;
         private Rectangles _rectangles;
-        private static int _width;
-        private static int _height;
+        private static int _width = 1280;
+        private static int _height = 720;
+        private float _lineWidth = 3f;
 
-        public Window() : base(1280, 720, GraphicsMode.Default, WindowTitle, GameWindowFlags.Default)
+        public Window() : base(_width, _height, GraphicsMode.Default, WindowTitle, GameWindowFlags.Default)
         {
             GL.Enable(EnableCap.Blend);
+            VSync = VSyncMode.Off;
             Load += OnLoad;
             Resize += OnResize;
             RenderFrame += OnDraw;
@@ -26,10 +28,10 @@ namespace UDA2018.GoldenRatio
             Keyboard.KeyDown += OnKeyDown;
         }
 
-        private void OnLoad(object sender, System.EventArgs e)
+        private void OnLoad(object sender, EventArgs e)
         {
             GL.ClearColor(Color.CornflowerBlue);
-            GL.LineWidth(3f);
+            GL.LineWidth(_lineWidth);
             WindowBorder = WindowBorder.Fixed;
 
             _rectangles = new Rectangles();
@@ -66,7 +68,6 @@ namespace UDA2018.GoldenRatio
             GL.Viewport(0, 0, _width, _height);
         }
 
-        private float _lineWidth = 1;
         private bool _pause;
         private void OnKeyDown(object sender, KeyboardKeyEventArgs e)
         {
@@ -104,9 +105,9 @@ namespace UDA2018.GoldenRatio
             }
         }
 
-        public static float DeltaTime => _elapsedTime;
-        public static float ScreenRatio => (float)_width / _height;
-        public static float OneOverScreenRatio => (float)_height / _width;
+        public static float DeltaTime => 0.01f;
+        public static float ScreenRatio => Width / Height;
+        public static float OneOverScreenRatio => Height / Width;
         public new static float Width => _width;
         public new static float Height => _height;
     }

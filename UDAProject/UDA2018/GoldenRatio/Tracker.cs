@@ -1,41 +1,28 @@
-﻿using System.Collections.Generic;
-using OpenTK;
-using UDA2018.GoldenRatio.Graphics;
+﻿using OpenTK;
 
 namespace UDA2018.GoldenRatio
 {
-    public class Tracker<T> : List<T> where T: ITrackable // I'd like to derive from Queue<T>
+    public class Tracker
     {
-        private T _tracked;
-        private int _index;
-
+        private readonly ITrackable _obj;
         private CallbackTrackFinish _callback;
         private Vector2 _startPosition, _endPosition;
         private float _startZoom, _endZoom;
 
-        public Tracker(IEnumerable<T> objects) : base(objects)
+        public Tracker(ITrackable obj)
         {
-            
+            _obj = obj;
+            TrackNext();
         }
 
         private void TrackNext()
         {
-            _tracked = this[_index++];
-            _startPosition = GoldenRectangle.TrackPosition;
-            _endPosition = _startPosition + _tracked.TrackInfo.OffsetPosition;
-            _startZoom = GoldenRectangle.TrackZoom;
-            _endZoom = _tracked.TrackInfo.ZoomOffset;
-            _callback = _tracked.TrackFinish();
-        }
-
-        public void Reset()
-        {
-            _index = 0;
-            _tracked = this[_index++];
-            _startPosition = Vector2.Zero;
-            _endPosition = _startPosition + _tracked.TrackInfo.OffsetPosition;
-            _startZoom = 1f;
-            _endZoom = _tracked.TrackInfo.ZoomOffset;
+            _startPosition = _obj.Traslation;
+            _endPosition = _obj.GetNextTraslation();
+            _startZoom = _obj.Zoom;
+            _endZoom = _obj.GetNextZoom();
+            _callback = _obj.TrackFinish();
+            _obj.Index++;
         }
 
         private float _time;
@@ -43,7 +30,7 @@ namespace UDA2018.GoldenRatio
         {
             if (_callback?.Invoke() == true) return;
             _callback = null;
-            if (_tracked == null || _time >= 1)
+            if (_time >= 1)
             {
                 TrackNext();
                 _time = 0;
@@ -51,17 +38,10 @@ namespace UDA2018.GoldenRatio
             }
 
             _time += Window.DeltaTime / 2;
-            GoldenRectangle.TrackPosition = GoldenMath.Lerp(_startPosition, _endPosition, _time);
-            GoldenRectangle.TrackZoom = GoldenMath.Lerp(_startZoom, _endZoom, _time);
+            _obj.Traslation = GoldenMath.Lerp(_startPosition, _endPosition, _time);
+            _obj.Zoom = GoldenMath.Lerp(_startZoom, _endZoom, _time);
         }
     }
 
     public delegate bool CallbackTrackFinish();
-
-    public struct TrackInfo
-    {
-        public CallbackTrackFinish Callback { get; set; }
-        public float ZoomOffset { get; set; }
-        public Vector2 OffsetPosition { get; set; }
-    }
 }

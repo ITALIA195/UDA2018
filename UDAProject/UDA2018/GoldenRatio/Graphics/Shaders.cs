@@ -23,7 +23,7 @@ namespace UDA2018.GoldenRatio.Graphics
         private static void LoadShader(string fileName, ShaderType type, out int shaderId)
         {
             shaderId = GL.CreateShader(type);
-            using (StreamReader stream = new StreamReader($"UDA2018\\GoldenRatio\\Shaders\\{fileName}.shader"))
+            using (StreamReader stream = new StreamReader(Startup.ShaderStream(fileName)))
                 GL.ShaderSource(shaderId, stream.ReadToEnd());
             GL.CompileShader(shaderId);
         }

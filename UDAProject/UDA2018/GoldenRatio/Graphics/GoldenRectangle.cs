@@ -5,12 +5,8 @@ using OpenTK.Graphics.OpenGL;
 
 namespace UDA2018.GoldenRatio.Graphics
 {
-    public class GoldenRectangle : IDrawable, ITrackable, IDisposable
+    public class GoldenRectangle : IDrawable, IDisposable
     {
-        public static Shaders Shader;
-        public static Shaders SquareShader;
-
-        public static int ProgramID;
         private readonly int _squareProgramId;
 
         private readonly Buffers _buffers;
@@ -40,9 +36,6 @@ namespace UDA2018.GoldenRatio.Graphics
 
         private readonly CColor _squareColor = new CColor(0f, 1f, 1f);
         private readonly CColor _rectangleColor = new CColor(1f, 0.3f, 0.3f);
-
-        public static CColor GradientStartColor = new CColor(2f);
-        public static CColor GradientEndColor = new CColor(3f);
 
         public GoldenRectangle(Side side, float x, float y, float? width, float? height)
         {
@@ -107,7 +100,7 @@ namespace UDA2018.GoldenRatio.Graphics
 
             #region Create matrices
 
-            CreateZoomMatrix(out Matrix4 zoomMatrix);
+            Rectangles.CreateZoomMatrix(out Matrix4 zoomMatrix);
             CreateUniformMatrix(ref zoomMatrix, out _matrix);
 
             #endregion
@@ -116,12 +109,12 @@ namespace UDA2018.GoldenRatio.Graphics
 
             #region Shaders
 
-            GL.LinkProgram(ProgramID);
+            GL.LinkProgram(Rectangles.Program.ID);
 
-            _positionAttribute = GL.GetAttribLocation(ProgramID, "position");
-            _gradientStartUniform = GL.GetUniformLocation(ProgramID, "gradientStart");
-            _gradientEndUniform = GL.GetUniformLocation(ProgramID, "gradientEnd");
-            _uniformMatrix = GL.GetUniformLocation(ProgramID, "modelView");
+            _positionAttribute = GL.GetAttribLocation(Rectangles.Program.ID, "position");
+            _gradientStartUniform = GL.GetUniformLocation(Rectangles.Program.ID, "gradientStart");
+            _gradientEndUniform = GL.GetUniformLocation(Rectangles.Program.ID, "gradientEnd");
+            _uniformMatrix = GL.GetUniformLocation(Rectangles.Program.ID, "modelView");
             if (_positionAttribute < 0 || _gradientStartUniform < 0 || _gradientEndUniform < 0 || _uniformMatrix < 0)
                 throw new Exception("Invalid shader supplied! Program cannot continue.");
 
@@ -146,7 +139,7 @@ namespace UDA2018.GoldenRatio.Graphics
             #region Shader
 
             _squareProgramId = GL.CreateProgram();
-            SquareShader.LinkProgram(_squareProgramId);
+            Rectangles.SquareShader.LinkProgram(_squareProgramId);
             GL.LinkProgram(_squareProgramId);
 
             _squarePositionAttribute = GL.GetAttribLocation(_squareProgramId, "position");
@@ -246,7 +239,7 @@ namespace UDA2018.GoldenRatio.Graphics
             if (_highlighted)
                 DrawQuads();
 
-            GL.UseProgram(ProgramID);
+            GL.UseProgram(Rectangles.Program.ID);
 
             GL.EnableVertexAttribArray(_positionAttribute);
 
@@ -294,18 +287,18 @@ namespace UDA2018.GoldenRatio.Graphics
         private float _alpha;
         public override void Update()
         {
-            CreateZoomMatrix(out Matrix4 zoomMatrix);
+            Rectangles.CreateZoomMatrix(out Matrix4 zoomMatrix);
             CreateUniformMatrix(ref zoomMatrix, out _matrix);
 
             GL.UseProgram(_squareProgramId);
             GL.Uniform1(_squareAlphaUniform, _highlighted ? Alpha : 0);
             GL.UniformMatrix4(_squareUniformMatrix, false, ref _matrix);
 
-            GL.UseProgram(ProgramID);
+            GL.UseProgram(Rectangles.Program.ID);
             GL.UniformMatrix4(_uniformMatrix, false, ref _matrix);
 
-            GL.Uniform3(_gradientStartUniform, GradientStartColor);
-            GL.Uniform3(_gradientEndUniform, GradientEndColor);
+            GL.Uniform3(_gradientStartUniform, Rectangles.GradientStart);
+            GL.Uniform3(_gradientEndUniform, Rectangles.GradientEnd);
         }
 
         private float Alpha
@@ -328,17 +321,6 @@ namespace UDA2018.GoldenRatio.Graphics
                         return 0f;
                 }
             }
-        }
-
-        private static float _zoom = 1f;
-        private static float _rotation;
-        private static Vector2 _translation;
-        private static void CreateZoomMatrix(out Matrix4 matrix)
-        {
-            matrix = Matrix4.Identity;
-            GoldenMath.MatrixMult(ref matrix, Matrix4.CreateTranslation(-_translation.X, -_translation.Y, 0f));
-            GoldenMath.MatrixMult(ref matrix, Matrix4.CreateRotationZ(_rotation));
-            GoldenMath.MatrixMult(ref matrix, Matrix4.CreateScale(_zoom, _zoom, 1f));
         }
 
         private static void CreateUniformMatrix(ref Matrix4 zoomMatrix, out Matrix4 matrix)
@@ -371,34 +353,23 @@ namespace UDA2018.GoldenRatio.Graphics
         }
 
 
-        public TrackInfo TrackInfo
+        public Vector2 OffsetPosition
         {
             get
             {
-                Vector2 offsetPosition;
                 switch (_side)
                 {
                     case Side.Right:
-                        offsetPosition = new Vector2((_width - _width / 2f - (_width - _height) / 2f) * Window.OneOverScreenRatio, 0);
-                        break;
+                        return new Vector2((_width - _width / 2f - (_width - _height) / 2f) * Window.OneOverScreenRatio, 0);
                     case Side.Bottom:
-                        offsetPosition = new Vector2(0, -(_height - _height / 2f - (_height - _width) / 2f));
-                        break;
+                        return new Vector2(0, -(_height - _height / 2f - (_height - _width) / 2f));
                     case Side.Left:
-                        offsetPosition = new Vector2(-(_width - _width / 2f - (_width - _height) / 2f) * Window.OneOverScreenRatio, 0);
-                        break;
+                        return new Vector2(-(_width - _width / 2f - (_width - _height) / 2f) * Window.OneOverScreenRatio, 0);
                     case Side.Top:
-                        offsetPosition = new Vector2(0, _height - _height / 2f - (_height - _width) / 2f);
-                        break;
+                        return new Vector2(0, _height - _height / 2f - (_height - _width) / 2f);
                     default:
                         throw new ArgumentOutOfRangeException(nameof(_side));
                 }
-
-                return new TrackInfo
-                {
-                    OffsetPosition = offsetPosition,
-                    ZoomOffset = GoldenMath.Min(Window.ScreenRatio * 2 / SubRectangle.Width, 1.9f / SubRectangle.Height)
-                };
             }
         }
 
@@ -425,26 +396,12 @@ namespace UDA2018.GoldenRatio.Graphics
         public CallbackTrackFinish TrackFinish()
         {
             _highlighted = true;
-            return Callback; // We could use lambda instead
-        }
-
-        private bool Callback()
-        {
-            if (!_highlighted && !_first && _side == Side.Right)
-                Rectangles.Tracker.Reset();
-            return _highlighted;
-        }
-
-        public static Vector2 TrackPosition
-        {
-            get => _translation;
-            set => _translation = value;
-        }
-
-        public static float TrackZoom
-        {
-            get => _zoom;
-            set => _zoom = value;
+            return () =>
+            {
+                if (!_highlighted && !_first && _side == Side.Right)
+                    Rectangles.ResetTracking();
+                return _highlighted;
+            };
         }
 
         public void Dispose()
