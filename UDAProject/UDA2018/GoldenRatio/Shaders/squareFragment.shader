@@ -1,7 +1,7 @@
-﻿#version 330 core
+﻿#version 120
 
 in vec4 color;
-out vec4 colorOut;
+varying out vec4 colorOut;
 
 void main()
 {

@@ -1,9 +1,9 @@
-﻿using System;
-using System.Drawing;
-using OpenTK;
+﻿using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 using OpenTK.Input;
+using System;
+using System.Drawing;
 using UDA2018.GoldenRatio.Graphics;
 
 namespace UDA2018.GoldenRatio
@@ -11,14 +11,13 @@ namespace UDA2018.GoldenRatio
     public class Window : GameWindow
     {
         private const string WindowTitle = "UDA Project - Coded by Hawk";
-        private static float _elapsedTime;
         private Rectangles _rectangles;
-        private static int _width = 1280;
-        private static int _height = 720;
+        private static float _screenRatio;
         private float _lineWidth = 3f;
 
-        public Window() : base(_width, _height, GraphicsMode.Default, WindowTitle, GameWindowFlags.Default)
+        public Window() : base(WindowSize.Width, WindowSize.Height, GraphicsMode.Default, WindowTitle, GameWindowFlags.Default, DisplayDevice.Default)
         {
+            _screenRatio = (float)Width / Height;
             GL.Enable(EnableCap.Blend);
             VSync = VSyncMode.Off;
             Load += OnLoad;
@@ -39,8 +38,6 @@ namespace UDA2018.GoldenRatio
 
         private void OnDraw(object sender, FrameEventArgs e)
         {
-            _elapsedTime = (float) e.Time;
-
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
             foreach (GoldenRectangle rectangle in _rectangles)
@@ -57,15 +54,14 @@ namespace UDA2018.GoldenRatio
             if (Keyboard[Key.Escape])
                 Exit();
 
+            if (_pause) return;
             _rectangles.Update();
         }
 
         private void OnResize(object sender, EventArgs e)
         {
-            _width = base.Width;
-            _height = base.Height;
-
-            GL.Viewport(0, 0, _width, _height);
+            _screenRatio = (float)Width / Height;
+            GL.Viewport(0, 0, Width, Height);
         }
 
         private bool _pause;
@@ -75,10 +71,6 @@ namespace UDA2018.GoldenRatio
             {
                 case Key.P:
                     _pause = !_pause;
-                    if (_pause)
-                        UpdateFrame -= OnUpdate;
-                    else
-                        UpdateFrame += OnUpdate;
                     break;
                 case Key.R:
                     _lineWidth -= 1f;
@@ -89,26 +81,35 @@ namespace UDA2018.GoldenRatio
                     GL.LineWidth(_lineWidth);
                     break;
                 case Key.F11:
-                    if (WindowState == WindowState.Fullscreen)
+                    switch (WindowState)
                     {
-                        WindowState = WindowState.Normal;
-                        base.Width = 1280;
-                        base.Height = 720;
-                    }
-                    else
-                    {
-                        WindowState = WindowState.Fullscreen;
-                        base.Width = 1920;
-                        base.Height = 1080;
+                        case WindowState.Fullscreen:
+                            WindowState = WindowState.Normal;
+                            Width = WindowSize.Width;
+                            Height = WindowSize.Height;
+                            break;
+                        default: // Windowed
+                            WindowState = WindowState.Fullscreen;
+                            Width = (int)Screen.Width;
+                            Height = (int)Screen.Height;
+                            break;
                     }
                     break;
             }
         }
 
         public static float DeltaTime => 0.01f;
-        public static float ScreenRatio => Width / Height;
-        public static float OneOverScreenRatio => Height / Width;
-        public new static float Width => _width;
-        public new static float Height => _height;
+        public static float ScreenRatio => _screenRatio;
+        public static float OneOverScreenRatio => 1f / _screenRatio;
+        public static Rectangle Screen => System.Windows.Forms.Screen.PrimaryScreen.Bounds;
+
+        public static Size WindowSize
+        {
+            get
+            {
+                float width = Screen.Width * 0.66666f;
+                return new Size((int) width, (int) (width / GoldenMath.Ratio));
+            }
+        }
     }
 }

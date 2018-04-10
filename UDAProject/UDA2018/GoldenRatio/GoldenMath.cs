@@ -2,7 +2,7 @@
 
 namespace UDA2018.GoldenRatio
 {
-    public class GoldenMath
+    public static class GoldenMath
     {
         /// <summary>
         /// Golden ratio. 

@@ -1,8 +1,8 @@
-﻿#version 330 core
+﻿#version 120
 
 in vec2 position;
 in vec3 colorIn;
-out vec4 color;
+varying out vec4 color;
 uniform float alpha;
 uniform mat4 modelView;
 

@@ -1,5 +1,6 @@
-﻿using System.IO;
-using OpenTK.Graphics.OpenGL;
+﻿using OpenTK.Graphics.OpenGL;
+using System;
+using System.IO;
 
 namespace UDA2018.GoldenRatio.Graphics
 {
@@ -20,12 +21,21 @@ namespace UDA2018.GoldenRatio.Graphics
             GL.AttachShader(programId, _fragmentShader);
         }
 
+        private static string GetShader(string shaderName)
+        {
+            using (Stream stream = Startup.Assembly.GetManifestResourceStream($@"UDA2018.GoldenRatio.Shaders.{shaderName}.shader"))
+                if (stream != null)
+                    using (StreamReader reader = new StreamReader(stream))
+                        return reader.ReadToEnd();
+            return null;
+        }
+
         private static void LoadShader(string fileName, ShaderType type, out int shaderId)
         {
             shaderId = GL.CreateShader(type);
-            using (StreamReader stream = new StreamReader(Startup.ShaderStream(fileName)))
-                GL.ShaderSource(shaderId, stream.ReadToEnd());
+            GL.ShaderSource(shaderId, GetShader(fileName));
             GL.CompileShader(shaderId);
+            Console.WriteLine(GL.GetShaderInfoLog(shaderId));
         }
 
     }

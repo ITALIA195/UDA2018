@@ -15,13 +15,14 @@ namespace UDA2018.GoldenRatio
             TrackNext();
         }
 
-        private void TrackNext()
+        public void TrackNext(bool animation = true)
         {
             _startPosition = _obj.Traslation;
             _endPosition = _obj.GetNextTraslation();
             _startZoom = _obj.Zoom;
             _endZoom = _obj.GetNextZoom();
-            _callback = _obj.TrackFinish();
+            if (animation)
+                _callback = _obj.TrackFinish();
             _obj.Index++;
         }
 

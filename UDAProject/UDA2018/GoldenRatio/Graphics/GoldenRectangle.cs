@@ -1,13 +1,12 @@
 ﻿using System;
-using System.Linq;
 using OpenTK;
 using OpenTK.Graphics.OpenGL;
 
 namespace UDA2018.GoldenRatio.Graphics
 {
-    public class GoldenRectangle : IDrawable, IDisposable
+    public class GoldenRectangle : IDisposable
     {
-        private readonly int _squareProgramId;
+        private readonly Program _squareProgram;
 
         private readonly Buffers _buffers;
         private readonly Buffers _squareBuffer1;
@@ -138,14 +137,14 @@ namespace UDA2018.GoldenRatio.Graphics
 
             #region Shader
 
-            _squareProgramId = GL.CreateProgram();
-            Rectangles.SquareShader.LinkProgram(_squareProgramId);
-            GL.LinkProgram(_squareProgramId);
+            _squareProgram = new Program(GL.CreateProgram());
+            Rectangles.SquareShader.LinkProgram(_squareProgram.ID);
+            GL.LinkProgram(_squareProgram.ID);
 
-            _squarePositionAttribute = GL.GetAttribLocation(_squareProgramId, "position");
-            _squareColorAttribute = GL.GetAttribLocation(_squareProgramId, "colorIn");
-            _squareAlphaUniform = GL.GetUniformLocation(_squareProgramId, "alpha");
-            _squareUniformMatrix = GL.GetUniformLocation(_squareProgramId, "modelView");
+            _squarePositionAttribute = GL.GetAttribLocation(_squareProgram.ID, "position");
+            _squareColorAttribute = GL.GetAttribLocation(_squareProgram.ID, "colorIn");
+            _squareAlphaUniform = GL.GetUniformLocation(_squareProgram.ID, "alpha");
+            _squareUniformMatrix = GL.GetUniformLocation(_squareProgram.ID, "modelView");
             if (_squarePositionAttribute < 0 || _squareColorAttribute < 0 || _squareUniformMatrix < 0)
                 throw new Exception("Invalid shader supplied! Program cannot continue.");
 
@@ -234,7 +233,7 @@ namespace UDA2018.GoldenRatio.Graphics
             _first = true;
         }
 
-        public override void Draw()
+        public void Draw()
         {
             if (_highlighted)
                 DrawQuads();
@@ -254,7 +253,7 @@ namespace UDA2018.GoldenRatio.Graphics
 
         private void DrawQuads()
         {
-            GL.UseProgram(_squareProgramId);
+            GL.UseProgram(_squareProgram.ID);
 
             GL.EnableVertexAttribArray(_squarePositionAttribute);
             GL.EnableVertexAttribArray(_squareColorAttribute);
@@ -285,12 +284,12 @@ namespace UDA2018.GoldenRatio.Graphics
 
         private bool _highlighted;
         private float _alpha;
-        public override void Update()
+        public void Update()
         {
             Rectangles.CreateZoomMatrix(out Matrix4 zoomMatrix);
             CreateUniformMatrix(ref zoomMatrix, out _matrix);
 
-            GL.UseProgram(_squareProgramId);
+            GL.UseProgram(_squareProgram.ID);
             GL.Uniform1(_squareAlphaUniform, _highlighted ? Alpha : 0);
             GL.UniformMatrix4(_squareUniformMatrix, false, ref _matrix);
 
@@ -326,7 +325,7 @@ namespace UDA2018.GoldenRatio.Graphics
         private static void CreateUniformMatrix(ref Matrix4 zoomMatrix, out Matrix4 matrix)
         {
             matrix = Matrix4.Identity;
-            GoldenMath.MatrixMult(ref matrix, Matrix4.CreateScale(Window.Height / Window.Width, 1f, 1f));
+            GoldenMath.MatrixMult(ref matrix, Matrix4.CreateScale(Window.OneOverScreenRatio, 1f, 1f));
             Matrix4.Mult(ref matrix, ref zoomMatrix, out matrix);
         }
 
@@ -373,20 +372,20 @@ namespace UDA2018.GoldenRatio.Graphics
             }
         }
 
-        public Rect SubRectangle
+        public Rectangle SubRectangle
         {
             get
             {
                 switch (_side)
                 {
                     case Side.Right:
-                        return new Rect(_x + _height, _y, _width - _height, _height);
+                        return new Rectangle(_x + _height, _y, _width - _height, _height);
                     case Side.Bottom:
-                        return new Rect(_x, _y + _width, _width, _height - _width);
+                        return new Rectangle(_x, _y + _width, _width, _height - _width);
                     case Side.Left:
-                        return new Rect(_x, _y, _width - _height, _height);
+                        return new Rectangle(_x, _y, _width - _height, _height);
                     case Side.Top:
-                        return new Rect(_x, _y, _width, _height - _width);
+                        return new Rectangle(_x, _y, _width, _height - _width);
                     default:
                         throw new ArgumentOutOfRangeException(nameof(_side));
                 }
@@ -399,7 +398,7 @@ namespace UDA2018.GoldenRatio.Graphics
             return () =>
             {
                 if (!_highlighted && !_first && _side == Side.Right)
-                    Rectangles.ResetTracking();
+                    Rectangles.Instance.ResetTracking();
                 return _highlighted;
             };
         }
@@ -412,7 +411,7 @@ namespace UDA2018.GoldenRatio.Graphics
             GL.DeleteBuffer(_squareBuffer1.ColorBuffer);
             GL.DeleteBuffer(_squareBuffer2.IndexBuffer);
             GL.DeleteBuffer(_squareBuffer2.ColorBuffer);
-            GL.DeleteProgram(_squareProgramId);
+            GL.DeleteProgram(_squareProgram.ID);
         }
     }
 

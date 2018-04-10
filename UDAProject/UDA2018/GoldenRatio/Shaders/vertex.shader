@@ -1,7 +1,7 @@
-﻿#version 330 core
+﻿#version 120
 
-in vec2 position;
-out vec4 color;
+varying in vec2 position;
+varying out vec4 color;
 uniform vec3 gradientStart;
 uniform vec3 gradientEnd;
 uniform mat4 modelView;
@@ -12,7 +12,7 @@ void main()
 	float t = gl_Position.x;
 	color = vec4(
 		gradientStart.x + t * (gradientEnd.x - gradientStart.x),
-		gradientStart.y + t * (gradientEnd.y - gradientStart.y),
+	    gradientStart.y + t * (gradientEnd.y - gradientStart.y),
 		gradientStart.z + t * (gradientEnd.z - gradientStart.z),
 		1
 	);
