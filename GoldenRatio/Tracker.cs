@@ -40,7 +40,12 @@ namespace GoldenRatio
 
             _time += Window.DeltaTime / 2;
             _obj.Translation = Vector2.Lerp(_startPosition, _endPosition, _time);
-            _obj.Zoom = GoldenMath.Lerp(_startZoom, _endZoom, _time);
+            _obj.Zoom = FloatLerp(_startZoom, _endZoom, _time);
+        }
+
+        private static float FloatLerp(float a, float b, float blend)
+        {
+            return a + blend * (b - a);
         }
     }
 

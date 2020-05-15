@@ -6,6 +6,8 @@ namespace GoldenRatio.Graphics
 {
     public class GoldenRectangle
     {
+        private const float GoldenRatio = 1.618033f;
+        
         private readonly Shaders _rectangleProgram;
         private readonly Shaders _squareProgram;
 
@@ -36,20 +38,20 @@ namespace GoldenRatio.Graphics
             switch (side)
             {
                 case Side.Right:
-                    vertices[4] = new Vector2(width / GoldenMath.Ratio - dW + x, +dH + y); // Top
-                    vertices[5] = new Vector2(width / GoldenMath.Ratio - dW + x, -dH + y); // Bottom
+                    vertices[4] = new Vector2(width / GoldenRatio - dW + x, +dH + y); // Top
+                    vertices[5] = new Vector2(width / GoldenRatio - dW + x, -dH + y); // Bottom
                     break;
                 case Side.Bottom:
-                    vertices[4] = new Vector2(-dW + x, dH - height / GoldenMath.Ratio + y); // Left
-                    vertices[5] = new Vector2(+dW + x, dH - height / GoldenMath.Ratio + y); // Right
+                    vertices[4] = new Vector2(-dW + x, dH - height / GoldenRatio + y); // Left
+                    vertices[5] = new Vector2(+dW + x, dH - height / GoldenRatio + y); // Right
                     break;
                 case Side.Left:
-                    vertices[4] = new Vector2(dW - width / GoldenMath.Ratio + x, +dH + y); // Top
-                    vertices[5] = new Vector2(dW - width / GoldenMath.Ratio + x, -dH + y); // Bottom
+                    vertices[4] = new Vector2(dW - width / GoldenRatio + x, +dH + y); // Top
+                    vertices[5] = new Vector2(dW - width / GoldenRatio + x, -dH + y); // Bottom
                     break;
                 case Side.Top:
-                    vertices[4] = new Vector2(-dW + x, height / GoldenMath.Ratio - dH + y); // Left
-                    vertices[5] = new Vector2(+dW + x, height / GoldenMath.Ratio - dH + y); // Right
+                    vertices[4] = new Vector2(-dW + x, height / GoldenRatio - dH + y); // Left
+                    vertices[5] = new Vector2(+dW + x, height / GoldenRatio - dH + y); // Right
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -284,9 +286,9 @@ namespace GoldenRatio.Graphics
                 _height = value;
                 
                 if ((_side & Side.Vertical) != 0)
-                    _height *= GoldenMath.Ratio;
+                    _height *= GoldenRatio;
                 else
-                    _height /= GoldenMath.Ratio;
+                    _height /= GoldenRatio;
             }
         }
         
@@ -298,9 +300,9 @@ namespace GoldenRatio.Graphics
                 _height = value;
                 
                 if ((_side & Side.Horizontal) != 0)
-                    _width *= GoldenMath.Ratio;
+                    _width *= GoldenRatio;
                 else
-                    _width /= GoldenMath.Ratio;
+                    _width /= GoldenRatio;
             }
         }
     }
