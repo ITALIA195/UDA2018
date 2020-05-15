@@ -1,6 +1,4 @@
-﻿using OpenTK;
-
-namespace GoldenRatio
+﻿namespace GoldenRatio
 {
     public static class GoldenMath
     {
@@ -23,12 +21,6 @@ namespace GoldenRatio
         {
             Clamp(ref t, 0f, 1f);
             return a + t * (b - a);
-        }
-
-        public static Vector2 Lerp(Vector2 a, Vector2 b, float t)
-        {
-            Clamp(ref t, 0f, 1f);
-            return new Vector2(a.X + (b.X - a.X) * t, a.Y + (b.Y - a.Y) * t);
         }
 
         public static float Min(float a, float b)

@@ -1,6 +1,7 @@
 ﻿using GoldenRatio.Graphics;
-using OpenTK;
-using OpenTK.Graphics.OpenGL4;
+using OpenToolkit.Graphics.OpenGL4;
+using OpenToolkit.Mathematics;
+using OpenToolkit.Windowing.Common;
 
 namespace GoldenRatio
 {
@@ -21,8 +22,8 @@ namespace GoldenRatio
         private readonly int _squareView;
         private readonly int _squareAlpha;
 
-        private readonly CColor _start = new CColor(0, 1, 0);
-        private readonly CColor _end = new CColor(1, 0, 0);
+        private readonly Vector3 _start = new Vector3(0, 1, 0);
+        private readonly Vector3 _end = new Vector3(1, 0, 0);
         
         public RectangleManager()
         {
@@ -51,13 +52,13 @@ namespace GoldenRatio
             CreateRectangles();
         }
 
-        public void Draw()
+        public void Render(FrameEventArgs e)
         {
             foreach (var rectangle in _rectangles)
                 rectangle.Draw();
         }
         
-        public void Update()
+        public void Update(FrameEventArgs e)
         {
             var matrix = Matrix4.Identity * 
                          Matrix4.CreateScale(Window.OneOverScreenRatio, 1, 0);
@@ -76,7 +77,7 @@ namespace GoldenRatio
 
         private void CreateRectangles()
         {
-            for (int i = 0; i < RectanglesNumber; i++)
+            for (var i = 0; i < RectanglesNumber; i++)
             {
                 _rectangles[i] = new GoldenRectangle(_rectangle, _square)
                 {

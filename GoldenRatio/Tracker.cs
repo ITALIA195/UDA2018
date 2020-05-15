@@ -1,4 +1,4 @@
-﻿using OpenTK;
+﻿using OpenToolkit.Mathematics;
 
 namespace GoldenRatio
 {
@@ -39,7 +39,7 @@ namespace GoldenRatio
             }
 
             _time += Window.DeltaTime / 2;
-            _obj.Translation = GoldenMath.Lerp(_startPosition, _endPosition, _time);
+            _obj.Translation = Vector2.Lerp(_startPosition, _endPosition, _time);
             _obj.Zoom = GoldenMath.Lerp(_startZoom, _endZoom, _time);
         }
     }

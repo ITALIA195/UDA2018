@@ -1,6 +1,6 @@
 ﻿using System;
-using OpenTK;
-using OpenTK.Graphics.OpenGL4;
+using OpenToolkit.Graphics.OpenGL4;
+using OpenToolkit.Mathematics;
 
 namespace GoldenRatio.Graphics
 {
@@ -26,8 +26,8 @@ namespace GoldenRatio.Graphics
         private static Vector2[] GetVertices(Side side, float x, float y, float width, float height)
         {
             var vertices = new Vector2[6];
-            float dW = width / 2f;
-            float dH = height / 2f;
+            var dW = width / 2f;
+            var dH = height / 2f;
             vertices[0] = new Vector2(-dW + x, +dH + y); // Top Left
             vertices[1] = new Vector2(+dW + x, +dH + y); // Top Right
             vertices[2] = new Vector2(+dW + x, -dH + y); // Bottom Right
@@ -97,23 +97,14 @@ namespace GoldenRatio.Graphics
             // == Square ==
             // ============
 
-            switch (_side)
+            indices = _side switch
             {
-                case Side.Right:
-                    indices = new uint[] { 4, 5, 2, 1 };
-                    break;
-                case Side.Bottom:
-                    indices = new uint[] { 4, 5, 2, 3 };
-                    break;
-                case Side.Left:
-                    indices = new uint[] { 4, 5, 3, 0 };
-                    break;
-                case Side.Top:
-                    indices = new uint[] { 4, 5, 1, 0 };
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
+                Side.Right => new uint[] {4, 5, 2, 1},
+                Side.Bottom => new uint[] {4, 5, 2, 3},
+                Side.Left => new uint[] {4, 5, 3, 0},
+                Side.Top => new uint[] {4, 5, 1, 0},
+                _ => throw new ArgumentOutOfRangeException()
+            };
 
             // Bind EBO
             _squareElementArray = GL.GenBuffer();
