@@ -243,20 +243,20 @@ namespace GoldenRatio.Graphics
             }
         }
 
-        public Rectangle SubRectangle
+        public Vector4 SubRectangle
         {
             get
             {
                 switch (_side)
                 {
                     case Side.Right:
-                        return new Rectangle(_x + _height, _y, _width - _height, _height);
+                        return new Vector4(_x + _height, _y, _width - _height, _height);
                     case Side.Bottom:
-                        return new Rectangle(_x, _y + _width, _width, _height - _width);
+                        return new Vector4(_x, _y + _width, _width, _height - _width);
                     case Side.Left:
-                        return new Rectangle(_x, _y, _width - _height, _height);
+                        return new Vector4(_x, _y, _width - _height, _height);
                     case Side.Top:
-                        return new Rectangle(_x, _y, _width, _height - _width);
+                        return new Vector4(_x, _y, _width, _height - _width);
                     default:
                         throw new ArgumentOutOfRangeException(nameof(_side));
                 }
