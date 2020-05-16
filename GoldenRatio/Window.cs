@@ -56,12 +56,6 @@ namespace GoldenRatio
             RenderFrame += rectangleManager.Render;
             UpdateFrame += rectangleManager.Update;
             Resize += rectangleManager.OnResize;
-
-            // var test = new TestBlink();
-
-            // RenderFrame += test.Render;
-            // UpdateFrame += test.Update;
-            // Resize += test.OnResize;
         }
 
         protected override void OnRenderFrame(FrameEventArgs e)
