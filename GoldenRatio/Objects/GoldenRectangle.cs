@@ -72,35 +72,42 @@ namespace GoldenRatio.Objects
         private static Vector2[] GetVertices(Side side, float x, float y, float width, float height)
         {
             var vertices = new Vector2[6];
-            var offset = new Vector2(x, y);
-            var dW = width / 2f;
-            var dH = height / 2f;
-            vertices[0] = new Vector2(-dW, +dH) + offset; // Top Left
-            vertices[1] = new Vector2(+dW, +dH) + offset; // Top Right
-            vertices[2] = new Vector2(+dW, -dH) + offset; // Bottom Right
-            vertices[3] = new Vector2(-dW, -dH) + offset; // Bottom Left
+            
+            var halfWidth = width / 2f;
+            var halfHeight = height / 2f;
+            vertices[0] = new Vector2(-halfWidth, +halfHeight); // Top Left
+            vertices[1] = new Vector2(+halfWidth, +halfHeight); // Top Right
+            vertices[2] = new Vector2(+halfWidth, -halfHeight); // Bottom Right
+            vertices[3] = new Vector2(-halfWidth, -halfHeight); // Bottom Left
+
+            var right = -halfWidth + height;
+            var top = -halfHeight + width;
             
             switch (side)
             {
                 case Side.Right:
-                    vertices[4] = new Vector2(-dW + width / GoldenRatio, +dH) + offset; // Top
-                    vertices[5] = new Vector2(-dW + width / GoldenRatio, -dH) + offset; // Bottom
+                    vertices[4] = new Vector2(right, +halfHeight); // Top
+                    vertices[5] = new Vector2(right, -halfHeight); // Bottom
                     break;
                 case Side.Left:
-                    vertices[4] = new Vector2(+dW - width / GoldenRatio, +dH) + offset; // Top
-                    vertices[5] = new Vector2(+dW - width / GoldenRatio, -dH) + offset; // Bottom
+                    vertices[4] = new Vector2(-right, +halfHeight); // Top
+                    vertices[5] = new Vector2(-right, -halfHeight); // Bottom
                     break;
                 case Side.Bottom:
-                    vertices[4] = new Vector2(-dW, dH - height / GoldenRatio) + offset; // Left
-                    vertices[5] = new Vector2(+dW, dH - height / GoldenRatio) + offset; // Right
+                    vertices[4] = new Vector2(-halfWidth, -top); // Left
+                    vertices[5] = new Vector2(+halfWidth, -top); // Right
                     break;
                 case Side.Top:
-                    vertices[4] = new Vector2(-dW, height / GoldenRatio - dH) + offset; // Left
-                    vertices[5] = new Vector2(+dW, height / GoldenRatio - dH) + offset; // Right
+                    vertices[4] = new Vector2(-halfWidth, top); // Left
+                    vertices[5] = new Vector2(+halfWidth, top); // Right
                     break;
                 default:
                     throw new Exception("Invalid side");
             }
+
+            var offset = new Vector2(x, y);
+            for (var i = 0; i < 6; i++)
+                vertices[i] += offset;
             
             return vertices;
         }
