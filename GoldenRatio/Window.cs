@@ -1,7 +1,5 @@
 using System;
 using System.Drawing;
-using System.Runtime.InteropServices;
-using Framework.Exceptions;
 using OpenToolkit.Graphics.OpenGL4;
 using OpenToolkit.Mathematics;
 using OpenToolkit.Windowing.Common;
@@ -12,8 +10,6 @@ namespace GoldenRatio
 {
     public class Window : GameWindow
     {
-        private static readonly DebugProc DebugProc = DebugCallback;
-        
         private const string WindowTitle = "Golden Ratio Visualization - FPS: {0:0}";
         private const int BaseWidth = 1280;
         private const int BaseHeight = 720;
@@ -41,15 +37,13 @@ namespace GoldenRatio
 
         private new void OnLoad()
         {
+            Startup.EnableGLLogging();
+            
             GL.ClearColor(Color.Coral);
             GL.LineWidth(_lineWidth);
             
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-
-            GL.DebugMessageCallback(DebugProc, IntPtr.Zero);
-            GL.Enable(EnableCap.DebugOutput);
-            GL.Enable(EnableCap.DebugOutputSynchronous);
 
             var rectangleManager = new RectangleManager();
             
@@ -113,25 +107,6 @@ namespace GoldenRatio
                             break;
                     }
                     break;
-            }
-        }
-        
-        private static void DebugCallback(
-            DebugSource source,
-            DebugType type,
-            int id,
-            DebugSeverity severity,
-            int length,
-            IntPtr message,
-            IntPtr userParam)
-        {
-            var messageString = Marshal.PtrToStringAnsi(message, length);
-
-            Console.WriteLine($"{severity} {type} | {messageString}");
-
-            if (type == DebugType.DebugTypeError)
-            {
-                throw new GLException(messageString);
             }
         }
     }
