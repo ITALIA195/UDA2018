@@ -1,70 +1,21 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-    <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    
     <PropertyGroup>
-        <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-        <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-        <ProjectGuid>{63825F94-4524-4E7F-96E0-A7EEDA60DD68}</ProjectGuid>
         <OutputType>Exe</OutputType>
-        <AppDesignerFolder>Properties</AppDesignerFolder>
-        <RootNamespace>GoldenRatio</RootNamespace>
-        <AssemblyName>GoldenRatio</AssemblyName>
-        <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
-        <FileAlignment>512</FileAlignment>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
     </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-        <PlatformTarget>AnyCPU</PlatformTarget>
-        <DebugSymbols>true</DebugSymbols>
-        <DebugType>full</DebugType>
-        <Optimize>false</Optimize>
-        <OutputPath>bin\Debug\</OutputPath>
-        <DefineConstants>DEBUG;TRACE</DefineConstants>
-        <ErrorReport>prompt</ErrorReport>
-        <WarningLevel>4</WarningLevel>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-        <PlatformTarget>AnyCPU</PlatformTarget>
-        <DebugType>pdbonly</DebugType>
-        <Optimize>true</Optimize>
-        <OutputPath>bin\Release\</OutputPath>
-        <DefineConstants>TRACE</DefineConstants>
-        <ErrorReport>prompt</ErrorReport>
-        <WarningLevel>4</WarningLevel>
-    </PropertyGroup>
+    
     <ItemGroup>
-      <Compile Include="GoldenMath.cs" />
-      <Compile Include="Graphics\Buffers.cs" />
-      <Compile Include="Graphics\CColor.cs" />
-      <Compile Include="Graphics\GoldenRectangle.cs" />
-      <Compile Include="Graphics\Shaders.cs" />
-      <Compile Include="Graphics\Side.cs" />
-      <Compile Include="ITrackable.cs" />
-      <Compile Include="Rectangle.cs" />
-      <Compile Include="RectangleManager.cs" />
-      <Compile Include="Startup.cs" />
-      <Compile Include="Tracker.cs" />
-      <Compile Include="Window.cs" />
+      <PackageReference Include="OpenTK" Version="4.0.0-pre9.1" />
     </ItemGroup>
+    
     <ItemGroup>
-      <Reference Include="OpenTK, Version=3.0.1.0, Culture=neutral, PublicKeyToken=bad199fe84eb3df4">
-        <HintPath>..\packages\OpenTK.3.0.1\lib\net20\OpenTK.dll</HintPath>
-        <Private>True</Private>
-      </Reference>
-      <Reference Include="System.Drawing" />
-      <Reference Include="System.Windows.Forms" />
+      <None Update="Shaders\**" CopyToOutputDirectory="Always" />
     </ItemGroup>
+    
     <ItemGroup>
-      <EmbeddedResource Include="Graphics\Shaders\rectangle.frag" />
-      <EmbeddedResource Include="Graphics\Shaders\rectangle.vert" />
-      <EmbeddedResource Include="Graphics\Shaders\square.frag" />
-      <EmbeddedResource Include="Graphics\Shaders\square.vert" />
+      <ProjectReference Include="..\Framework\Framework\Framework.csproj" />
+      <ProjectReference Include="..\Framework\Hawk.Framework\Hawk.Framework.csproj" />
     </ItemGroup>
-    <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-    <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-         Other similar extension points exist, see Microsoft.Common.targets.
-    <Target Name="BeforeBuild">
-    </Target>
-    <Target Name="AfterBuild">
-    </Target>
-    -->
+    
 </Project>

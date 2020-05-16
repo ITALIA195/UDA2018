@@ -1,74 +1,86 @@
-﻿using System;
+using System;
 using System.Drawing;
-using OpenTK;
-using OpenTK.Graphics;
-using OpenTK.Graphics.OpenGL4;
-using OpenTK.Input;
+using OpenToolkit.Graphics.OpenGL4;
+using OpenToolkit.Mathematics;
+using OpenToolkit.Windowing.Common;
+using OpenToolkit.Windowing.Common.Input;
+using OpenToolkit.Windowing.Desktop;
 
 namespace GoldenRatio
 {
     public class Window : GameWindow
     {
-        private const string WindowTitle = "UDA Project - Coded by Hawk";
-        private RectangleManager _rectangleManager;
-        private static float _screenRatio;
+        private const string WindowTitle = "Golden Ratio Visualization - FPS: {0:0}";
+        private const int BaseWidth = 1280;
+        private const int BaseHeight = 720;
+
         private float _lineWidth = 3f;
 
-        public Window() : base(WindowSize.Width, WindowSize.Height, GraphicsMode.Default, WindowTitle, GameWindowFlags.Default, DisplayDevice.Default)
+        public Window() : base(GameWindowSettings.Default, NativeWindowSettings)
         {
-            _screenRatio = (float)Width / Height;
-            GL.Enable(EnableCap.Blend);
-            VSync = VSyncMode.On;
+            Load += OnLoad;
+            UpdateFrame += OnUpdate;
+            Resize += OnResize;
+            KeyDown += OnKeyDown;
         }
 
-        protected override void OnLoad(EventArgs e)
+        private static NativeWindowSettings NativeWindowSettings =>
+            new NativeWindowSettings
+            {
+                Title = WindowTitle,
+                Size = new Vector2i(BaseWidth, BaseHeight),
+                APIVersion = new Version(4, 6),
+                Profile = ContextProfile.Core
+            };
+
+        public static float ScreenRatio { get; private set; } = BaseWidth / (float) BaseHeight;
+
+        private new void OnLoad()
         {
+            Startup.EnableGLLogging();
+            
             GL.ClearColor(Color.Coral);
             GL.LineWidth(_lineWidth);
+            
+            GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-            WindowBorder = WindowBorder.Fixed;
 
-            _rectangleManager = new RectangleManager();
+            var rectangleManager = new RectangleManager();
+            
+            RenderFrame += rectangleManager.Render;
+            UpdateFrame += rectangleManager.Update;
+            Resize += rectangleManager.OnResize;
         }
 
         protected override void OnRenderFrame(FrameEventArgs e)
         {
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-            _rectangleManager.Draw();
+            base.OnRenderFrame(e);
             
-            GL.Flush();
             SwapBuffers();
+            GL.Flush();
         }
 
-        protected override void OnUpdateFrame(FrameEventArgs e)
+        private void OnUpdate(FrameEventArgs e)
         {
-            if (e.Time < 0.0005) return; //TODO: Check if works in less powerful computers
-            Title = $"{WindowTitle} - FPS: {1f / e.Time:0.}";
-
-            if (_pause) return;
-            _rectangleManager.Update();
+            Title = string.Format(WindowTitle, 1 / e.Time);
         }
 
-        protected override void OnResize(EventArgs e)
+        private new static void OnResize(ResizeEventArgs e)
         {
-            _screenRatio = (float)Width / Height;
-            GL.Viewport(0, 0, Width, Height);
+            ScreenRatio = e.Width / (float) e.Height;
+            GL.Viewport(0, 0, e.Width, e.Height);
         }
-
-        private bool _pause;
-
-        protected override void OnKeyDown(KeyboardKeyEventArgs e)
+        
+        private new void OnKeyDown(KeyboardKeyEventArgs e)
         {
             switch (e.Key)
             {
                 case Key.Q:
                 case Key.Escape:
-                    Exit();
-                    break;
-                
-                case Key.P:
-                    _pause = !_pause;
+                case Key.F4 when e.Alt:
+                    Close();
                     break;
                 
                 case Key.R:
@@ -86,30 +98,15 @@ namespace GoldenRatio
                     {
                         case WindowState.Fullscreen:
                             WindowState = WindowState.Normal;
-                            Width = WindowSize.Width;
-                            Height = WindowSize.Height;
+                            Size = new Vector2i(BaseWidth, BaseHeight);
                             break;
                         
-                        default: // Windowed
+                        case WindowState.Normal:
                             WindowState = WindowState.Fullscreen;
-                            Width = (int)Screen.Width;
-                            Height = (int)Screen.Height;
+                            Size = new Vector2i(1920, 1080); //TODO: Support all resolutions
                             break;
                     }
                     break;
-            }
-        }
-
-        public static float DeltaTime => 0.01f;
-        public static float OneOverScreenRatio => 1f / _screenRatio;
-        public static Rectangle Screen => System.Windows.Forms.Screen.PrimaryScreen.Bounds;
-
-        public static Size WindowSize
-        {
-            get
-            {
-                float width = Screen.Width * 0.66666f;
-                return new Size((int) width, (int) (width / GoldenMath.Ratio));
             }
         }
     }
