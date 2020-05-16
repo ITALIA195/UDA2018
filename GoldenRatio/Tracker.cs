@@ -8,6 +8,7 @@ namespace GoldenRatio
         private CallbackTrackFinish _callback;
         private Vector2 _startPosition, _endPosition;
         private float _startZoom, _endZoom;
+        private float _time;
 
         public Tracker(ITrackable obj)
         {
@@ -26,7 +27,6 @@ namespace GoldenRatio
             _obj.Index++;
         }
 
-        private float _time;
         public void Update()
         {
             if (_callback?.Invoke() == true) return;
@@ -38,7 +38,7 @@ namespace GoldenRatio
                 return;
             }
 
-            _time += Window.DeltaTime / 2;
+            _time += 0.001f / 2;
             _obj.Translation = Vector2.Lerp(_startPosition, _endPosition, _time);
             _obj.Zoom = FloatLerp(_startZoom, _endZoom, _time);
         }

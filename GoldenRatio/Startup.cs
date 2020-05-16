@@ -8,8 +8,8 @@ namespace GoldenRatio
 
         public static void Main()
         {
-            using (var window = new Window())
-                window.Run();
+            using var window = new Window();
+            window.Run();
         }
     }
 }

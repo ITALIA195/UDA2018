@@ -10,12 +10,10 @@ namespace GoldenRatio
 {
     public class Window : GameWindow
     {
-        private const string WindowTitle = "Golden Ratio Visualization - FPS: {0}";
+        private const string WindowTitle = "Golden Ratio Visualization - FPS: {0:0}";
         private const int BaseWidth = 1280;
         private const int BaseHeight = 720;
-        
-        private static float _screenRatio = BaseWidth / (float) BaseHeight;
-        
+
         private float _lineWidth = 3f;
 
         public Window() : base(GameWindowSettings.Default, NativeWindowSettings)
@@ -31,25 +29,31 @@ namespace GoldenRatio
             {
                 Title = WindowTitle,
                 Size = new Vector2i(BaseWidth, BaseHeight),
-                WindowBorder = WindowBorder.Fixed,
                 APIVersion = new Version(4, 6),
                 Profile = ContextProfile.Core
             };
 
-        public static float DeltaTime => 0.01f;
-        public static float OneOverScreenRatio => 1f / _screenRatio;
+        public static float ScreenRatio { get; private set; } = BaseWidth / (float) BaseHeight;
 
         private new void OnLoad()
         {
             GL.ClearColor(Color.Coral);
+            GL.LineWidth(_lineWidth);
+            
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
-            GL.LineWidth(_lineWidth);
 
             var rectangleManager = new RectangleManager();
             
             RenderFrame += rectangleManager.Render;
             UpdateFrame += rectangleManager.Update;
+            Resize += rectangleManager.OnResize;
+
+            // var test = new TestBlink();
+
+            // RenderFrame += test.Render;
+            // UpdateFrame += test.Update;
+            // Resize += test.OnResize;
         }
 
         protected override void OnRenderFrame(FrameEventArgs e)
@@ -58,8 +62,8 @@ namespace GoldenRatio
 
             base.OnRenderFrame(e);
             
-            GL.Flush();
             SwapBuffers();
+            GL.Flush();
         }
 
         private void OnUpdate(FrameEventArgs e)
@@ -69,7 +73,7 @@ namespace GoldenRatio
 
         private new static void OnResize(ResizeEventArgs e)
         {
-            _screenRatio = e.Width / (float) e.Height;
+            ScreenRatio = e.Width / (float) e.Height;
             GL.Viewport(0, 0, e.Width, e.Height);
         }
         
