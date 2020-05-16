@@ -12,20 +12,16 @@ namespace GoldenRatio.Objects
         private readonly Program _rectangleProgram;
         private readonly Program _squareProgram;
 
-        private int _sharedVertexBufferObject;
-
-        private GLObjects _rectangleBuffers;
-        private GLObjects _squareBuffers;
-
         private float _width;
         private float _height;
         
-        private bool _highlighted;
-
         private Vector2[] _vertices;
-        
         private uint[] _rectangleIndices;
         private uint[] _squareIndices;
+
+        private int _vertexBuffer;
+        private GLObjects _squareBuffers;
+        private GLObjects _rectangleBuffers;
    
         public GoldenRectangle(Program rectangleProgram, Program squareProgram)
         {
@@ -66,86 +62,62 @@ namespace GoldenRatio.Objects
                     _width /= GoldenRatio;
             }
         }
+
+        public int RectangleVertexArray => _rectangleBuffers.VertexArray;
+        public int SquareVertexArray => _squareBuffers.VertexArray;
+
+        public int RectangleVertices => _rectangleIndices.Length;
+        public int SquareVertices => _squareIndices.Length;
         
-        
-        public void Render()
-        {
-            if (true)
-            {
-                _squareProgram.Bind();
-
-                GL.BindBuffer(BufferTarget.ArrayBuffer, _sharedVertexBufferObject);
-                GL.BindBuffer(BufferTarget.ElementArrayBuffer, _squareBuffers.ElementBuffer);
-                
-                GL.DrawElements(PrimitiveType.TriangleFan, _squareIndices.Length, DrawElementsType.UnsignedInt, 0);
-            }
-
-            _rectangleProgram.Bind();
-            
-            GL.VertexAttribPointer(0, 2, VertexAttribPointerType.Float, false, Vector2.SizeInBytes, 0);
-            GL.EnableVertexAttribArray(0);
-            GL.VertexAttribPointer(0, 2, VertexAttribPointerType.Float, false, Vector2.SizeInBytes, 0);
-
-            GL.BindBuffer(BufferTarget.ArrayBuffer, _sharedVertexBufferObject);
-            GL.BindBuffer(BufferTarget.ElementArrayBuffer, _rectangleBuffers.ElementBuffer);
-            
-            GL.DrawElements(PrimitiveType.Lines, _rectangleIndices.Length, DrawElementsType.UnsignedInt, 0);
-            
-            GL.DisableVertexAttribArray(0);
-        }
-
         private static Vector2[] GetVertices(Side side, float x, float y, float width, float height)
         {
             var vertices = new Vector2[6];
+            var offset = new Vector2(x, y);
             var dW = width / 2f;
             var dH = height / 2f;
-            vertices[0] = new Vector2(-dW + x, +dH + y); // Top Left
-            vertices[1] = new Vector2(+dW + x, +dH + y); // Top Right
-            vertices[2] = new Vector2(+dW + x, -dH + y); // Bottom Right
-            vertices[3] = new Vector2(-dW + x, -dH + y); // Bottom Left
+            vertices[0] = new Vector2(-dW, +dH) + offset; // Top Left
+            vertices[1] = new Vector2(+dW, +dH) + offset; // Top Right
+            vertices[2] = new Vector2(+dW, -dH) + offset; // Bottom Right
+            vertices[3] = new Vector2(-dW, -dH) + offset; // Bottom Left
             
             switch (side)
             {
                 case Side.Right:
-                    vertices[4] = new Vector2(-dW + width / GoldenRatio + x, +dH + y); // Top
-                    vertices[5] = new Vector2(-dW + width / GoldenRatio + x, -dH + y); // Bottom
+                    vertices[4] = new Vector2(-dW + width / GoldenRatio, +dH) + offset; // Top
+                    vertices[5] = new Vector2(-dW + width / GoldenRatio, -dH) + offset; // Bottom
                     break;
                 case Side.Left:
-                    vertices[4] = new Vector2(+dW - width / GoldenRatio + x, +dH + y); // Top
-                    vertices[5] = new Vector2(+dW - width / GoldenRatio + x, -dH + y); // Bottom
+                    vertices[4] = new Vector2(+dW - width / GoldenRatio, +dH) + offset; // Top
+                    vertices[5] = new Vector2(+dW - width / GoldenRatio, -dH) + offset; // Bottom
                     break;
                 case Side.Bottom:
-                    vertices[4] = new Vector2(-dW + x, dH - height / GoldenRatio + y); // Left
-                    vertices[5] = new Vector2(+dW + x, dH - height / GoldenRatio + y); // Right
+                    vertices[4] = new Vector2(-dW, dH - height / GoldenRatio) + offset; // Left
+                    vertices[5] = new Vector2(+dW, dH - height / GoldenRatio) + offset; // Right
                     break;
                 case Side.Top:
-                    vertices[4] = new Vector2(-dW + x, height / GoldenRatio - dH + y); // Left
-                    vertices[5] = new Vector2(+dW + x, height / GoldenRatio - dH + y); // Right
+                    vertices[4] = new Vector2(-dW, height / GoldenRatio - dH) + offset; // Left
+                    vertices[5] = new Vector2(+dW, height / GoldenRatio - dH) + offset; // Right
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    throw new Exception("Invalid side");
             }
             
             return vertices;
         }
         
-        public void BindData()
+        public void CreateBuffers()
         {
-            // VBO data (Used by both Rectangle and Square)
+            // === Vertex Buffer ===
+            
             _vertices = GetVertices(Side, X, Y, _width, _height);
 
-            // Bind VBO
-            _sharedVertexBufferObject = GL.GenBuffer();
-            GL.BindBuffer(BufferTarget.ArrayBuffer, _sharedVertexBufferObject);
+            // Create Buffer
+            _vertexBuffer = GL.GenBuffer();
+            GL.BindBuffer(BufferTarget.ArrayBuffer, _vertexBuffer);
             GL.BufferData(BufferTarget.ArrayBuffer, _vertices.Length * Vector2.SizeInBytes, _vertices, BufferUsageHint.StaticDraw);
             
-            // ===============
-            // == Rectangle ==
-            // ===============
+            // === Rectangle ===
             
-            _rectangleBuffers = new GLObjects(GLObject.ElementBuffer);
-            
-            // EBO indexes
             _rectangleIndices = new uint[]
             {
                 0, 1, // Top
@@ -155,16 +127,22 @@ namespace GoldenRatio.Objects
                 
                 4, 5, // Line
             };
-
-            // Bind EBO
+            
+            // Create Buffers
+            _rectangleBuffers = new GLObjects(GLObject.ElementBuffer | GLObject.VertexArray);
+            
+            // Bind Vertex Array
+            GL.BindVertexArray(_rectangleBuffers.VertexArray);
+            
+            // Enable AttribArray
+            GL.EnableVertexAttribArray(0);
+            GL.VertexAttribPointer(0, 2, VertexAttribPointerType.Float, false, Vector2.SizeInBytes, 0);
+            
+            // Create Buffer
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, _rectangleBuffers.ElementBuffer);
             GL.BufferData(BufferTarget.ElementArrayBuffer, _rectangleIndices.Length * sizeof(uint), _rectangleIndices, BufferUsageHint.StaticDraw);
-
-            // ============
-            // == Square ==
-            // ============
-
-            _squareBuffers = new GLObjects(GLObject.ElementBuffer | GLObject.VertexArray);
+            
+            // === Square ===
             
             _squareIndices = Side switch
             {
@@ -175,18 +153,19 @@ namespace GoldenRatio.Objects
                 _ => throw new Exception("Invalid side")
             };
             
-            // Bind EBO
+            // Create Buffers
+            _squareBuffers = new GLObjects(GLObject.ElementBuffer | GLObject.VertexArray);
+            
+            // Bind Vertex Array
+            GL.BindVertexArray(_squareBuffers.VertexArray);
+            
+            // Enable AttribArray
+            GL.EnableVertexAttribArray(0);
+            GL.VertexAttribPointer(0, 2, VertexAttribPointerType.Float, false, Vector2.SizeInBytes, 0);
+            
+            // Create Buffer
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, _squareBuffers.ElementBuffer);
             GL.BufferData(BufferTarget.ElementArrayBuffer, _squareIndices.Length * sizeof(uint), _squareIndices, BufferUsageHint.StaticDraw);
-            
-            // Bind VAO
-            GL.BindVertexArray(_squareBuffers.VertexArray);
-            GL.BindBuffer(BufferTarget.ArrayBuffer, _sharedVertexBufferObject);
-            GL.BindBuffer(BufferTarget.ElementArrayBuffer, _squareBuffers.ElementBuffer);
-            
-            _squareProgram.Bind();
-            GL.VertexAttribPointer(0, 2, VertexAttribPointerType.Float, false, Vector2.SizeInBytes, 0);
-            GL.EnableVertexAttribArray(0);
         }
 
         public GoldenRectangle Next
