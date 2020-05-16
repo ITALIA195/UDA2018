@@ -12,13 +12,13 @@ namespace GoldenRatio
 {
     public class Window : GameWindow
     {
+        private static readonly DebugProc DebugProc = DebugCallback;
+        
         private const string WindowTitle = "Golden Ratio Visualization - FPS: {0:0}";
         private const int BaseWidth = 1280;
         private const int BaseHeight = 720;
 
         private float _lineWidth = 3f;
-
-        private DebugProc _debugProc = DebugCallback;
 
         public Window() : base(GameWindowSettings.Default, NativeWindowSettings)
         {
@@ -47,7 +47,7 @@ namespace GoldenRatio
             GL.Enable(EnableCap.Blend);
             GL.BlendFunc(BlendingFactor.SrcAlpha, BlendingFactor.OneMinusSrcAlpha);
 
-            GL.DebugMessageCallback(_debugProc, IntPtr.Zero);
+            GL.DebugMessageCallback(DebugProc, IntPtr.Zero);
             GL.Enable(EnableCap.DebugOutput);
             GL.Enable(EnableCap.DebugOutputSynchronous);
 
