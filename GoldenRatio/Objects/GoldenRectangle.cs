@@ -1,5 +1,6 @@
 ﻿using System;
-using Hawk.Framework;
+using Framework;
+using Framework.Shaders;
 using OpenToolkit.Graphics.OpenGL4;
 using OpenToolkit.Mathematics;
 
@@ -20,8 +21,8 @@ namespace GoldenRatio.Objects
         private uint[] _squareIndices;
 
         private int _vertexBuffer;
-        private GLObjects _squareBuffers;
-        private GLObjects _rectangleBuffers;
+        private readonly GLObjects _squareBuffers = new GLObjects();
+        private readonly GLObjects _rectangleBuffers = new GLObjects();
    
         public GoldenRectangle(Program rectangleProgram, Program squareProgram)
         {
@@ -135,9 +136,6 @@ namespace GoldenRatio.Objects
                 4, 5, // Line
             };
             
-            // Create Buffers
-            _rectangleBuffers = new GLObjects(GLObject.ElementBuffer | GLObject.VertexArray);
-            
             // Bind Vertex Array
             GL.BindVertexArray(_rectangleBuffers.VertexArray);
             
@@ -159,9 +157,6 @@ namespace GoldenRatio.Objects
                 Side.Top => new uint[] {4, 5, 1, 0},
                 _ => throw new Exception("Invalid side")
             };
-            
-            // Create Buffers
-            _squareBuffers = new GLObjects(GLObject.ElementBuffer | GLObject.VertexArray);
             
             // Bind Vertex Array
             GL.BindVertexArray(_squareBuffers.VertexArray);

@@ -1,5 +1,5 @@
-﻿using GoldenRatio.Objects;
-using Hawk.Framework;
+﻿using Framework.Shaders;
+using GoldenRatio.Objects;
 using OpenToolkit.Graphics.OpenGL4;
 using OpenToolkit.Mathematics;
 using OpenToolkit.Windowing.Common;
